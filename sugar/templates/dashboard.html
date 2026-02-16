@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}
+    Admin Dashboard
+{% endblock title %}
+{% block content %}
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex justify-between items-center mb-4">
+            <h1 class="text-2xl font-bold">Admin Dashboard</h1>
+            <a href="{% url 'logout' %}"
+               class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Logout</a>
+        </div>
+        <!-- File Upload Section -->
+        <div class="mb-8 p-6 bg-white rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4">Upload Excel Dataset</h2>
+            <form action="{% url 'dashboard' %}"
+                  method="post"
+                  enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="flex items-center">
+                    <input type="file"
+                           name="excel_file"
+                           accept=".xls,.xlsx"
+                           class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    <button type="submit"
+                            class="ml-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Upload</button>
+                </div>
+            </form>
+        </div>
+        <!-- Uploaded Files Section -->
+        <div class="p-6 bg-white rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4">Uploaded Files</h2>
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            File Name
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Upload Date
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for file in uploaded_files %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap">{{ file.name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">{{ file.upload_date|date:"Y-m-d" }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="2"
+                                class="px-6 py-4 whitespace-nowrap text-center text-gray-500">
+                                No files uploaded yet.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock content %}

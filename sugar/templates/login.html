@@ -1,36 +1,50 @@
 {% extends "base.html" %}
-
-{% block title %}Login{% endblock %}
-
+{% block title %}
+    Login
+{% endblock title %}
 {% block content %}
-<div class="flex items-center justify-center min-h-screen">
-    <div class="mx-auto max-w-lg w-full px-4">
-        <form method="post"
-              class="mb-0 mt-6 space-y-4 rounded-lg p-4 shadow-lg sm:p-6 lg:p-8">
-            {% csrf_token %}
-            <p class="text-center text-lg font-medium">Admin Login</p>
-            {% if error %}<div class="p-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">{{ error }}</div>{% endif %}
-            <div>
-                <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
-                <input type="text"
-                       id="username"
-                       name="username"
-                       class="mt-1 w-full rounded-md border-gray-200 bg-white text-sm text-gray-700 shadow-sm p-2"
-                       required />
-            </div>
-            <div>
-                <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                <input type="password"
-                       id="password"
-                       name="password"
-                       class="mt-1 w-full rounded-md border-gray-200 bg-white text-sm text-gray-700 shadow-sm p-2"
-                       required />
-            </div>
-            <button type="submit"
-                    class="block w-full rounded-lg bg-indigo-600 px-5 py-3 text-sm font-medium text-white cursor-pointer hover:bg-indigo-700">
-                Sign in
-            </button>
-        </form>
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="mx-auto max-w-lg w-full px-4">
+            <form method="post"
+                  class="mb-0 mt-6 space-y-4 rounded-lg p-4 shadow-lg sm:p-6 lg:p-8">
+                {% csrf_token %}
+                <div class="flex flex-col items-center justify-center space-y-2">
+                    <svg width="48px"
+                         height="48px"
+                         stroke-width="1.5"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         xmlns="http://www.w3.org/2000/svg"
+                         color="currentColor">
+                        <path d="M5 20V19C5 15.134 8.13401 12 12 12V12C15.866 12 19 15.134 19 19V20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        </path>
+                        <path d="M12 12C14.2091 12 16 10.2091 16 8C16 5.79086 14.2091 4 12 4C9.79086 4 8 5.79086 8 8C8 10.2091 9.79086 12 12 12Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        </path>
+                    </svg>
+                    <p class="text-lg font-medium">Admin Login</p>
+                </div>
+                {% if error %}<div class="p-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">{{ error }}</div>{% endif %}
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                    <input type="text"
+                           id="username"
+                           name="username"
+                           class="mt-1 w-full rounded-md border-gray-200 bg-white text-sm text-gray-700 shadow-sm p-2"
+                           required />
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input type="password"
+                           id="password"
+                           name="password"
+                           class="mt-1 w-full rounded-md border-gray-200 bg-white text-sm text-gray-700 shadow-sm p-2"
+                           required />
+                </div>
+                <button type="submit"
+                        class="block w-full rounded-lg bg-indigo-600 px-5 py-3 text-sm font-medium text-white cursor-pointer hover:bg-indigo-700">
+                    Sign in
+                </button>
+            </form>
+        </div>
     </div>
-</div>
-{% endblock %}
+{% endblock content %}
