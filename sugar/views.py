@@ -33,7 +33,7 @@ def dashboard_view(request):
     if not request.session.get('is_authenticated'):
         return redirect('login')
 
-    upload_dir = os.path.join(settings.BASE_DIR, "uploads")
+    upload_dir = os.path.join(settings.BASE_DIR, "datasets")
     if not os.path.exists(upload_dir):
         os.makedirs(upload_dir)
 

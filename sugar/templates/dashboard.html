@@ -6,58 +6,70 @@
     <div class="container mx-auto px-4 py-8">
         <div class="flex justify-between items-center mb-4">
             <h1 class="text-2xl font-bold">Admin Dashboard</h1>
-            <a href="{% url 'logout' %}"
-               class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Logout</a>
+            <a href="{% url 'logout' %}" class="flex items-center justify-center space-x-2 rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-200">
+              <svg width="20px" height="20px" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M15 12H3m0 0l3.5-3.5M3 12l3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M10 6V5a1 1 0 011-1h9a1 1 0 011 1v14a1 1 0 01-1 1h-9a1 1 0 01-1-1v-1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              <span>Logout</span>
+            </a>
         </div>
-        <!-- File Upload Section -->
-        <div class="mb-8 p-6 bg-white rounded-lg shadow-md">
-            <h2 class="text-xl font-semibold mb-4">Upload Excel Dataset</h2>
-            <form action="{% url 'dashboard' %}"
-                  method="post"
-                  enctype="multipart/form-data">
-                {% csrf_token %}
-                <div class="flex items-center">
-                    <input type="file"
-                           name="excel_file"
-                           accept=".xls,.xlsx"
-                           class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                    <button type="submit"
-                            class="ml-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Upload</button>
+        <div class="p-6 bg-white rounded-2xl shadow-md">
+            <!-- File Upload Section -->
+            <div>
+                <h2 class="text-xl font-semibold mb-4">Upload Excel Dataset</h2>
+                <form action="{% url 'dashboard' %}"
+                      method="post"
+                      enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="flex items-center">
+                        <input type="file"
+                               name="excel_file"
+                               accept=".xls,.xlsx"
+                               class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                        <button type="submit"
+                                class="ml-4 inline-flex items-center justify-center space-x-2 rounded-lg bg-indigo-600 px-6 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring focus:ring-indigo-500 active:bg-indigo-800">
+                            <svg width="20px" height="20px" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M12 15l-3-3m3 3l3-3m-3 3V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8.5 19H6a4 4 0 01-4-4v-2.5a4.5 4.5 0 014.5-4.5A4.5 4.5 0 0111 6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M15.5 19H18a4 4 0 004-4v-2.5a4.5 4.5 0 00-4.5-4.5A4.5 4.5 0 0013 6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                            <span>Upload</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <hr class="my-6">
+
+            <!-- Uploaded Files Section -->
+            <div>
+                <h2 class="text-xl font-semibold mb-4">Uploaded Files</h2>
+                <div class="rounded-lg overflow-hidden border border-gray-200">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    File Name
+                                </th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Upload Date
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for file in uploaded_files %}
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap">{{ file.name }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">{{ file.upload_date|date:"Y-m-d" }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="2"
+                                        class="px-6 py-4 whitespace-nowrap text-center text-gray-500">
+                                        No files uploaded yet.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
-            </form>
-        </div>
-        <!-- Uploaded Files Section -->
-        <div class="p-6 bg-white rounded-lg shadow-md">
-            <h2 class="text-xl font-semibold mb-4">Uploaded Files</h2>
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th scope="col"
-                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            File Name
-                        </th>
-                        <th scope="col"
-                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Upload Date
-                        </th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    {% for file in uploaded_files %}
-                        <tr>
-                            <td class="px-6 py-4 whitespace-nowrap">{{ file.name }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap">{{ file.upload_date|date:"Y-m-d" }}</td>
-                        </tr>
-                    {% empty %}
-                        <tr>
-                            <td colspan="2"
-                                class="px-6 py-4 whitespace-nowrap text-center text-gray-500">
-                                No files uploaded yet.
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            </div>
         </div>
     </div>
 {% endblock content %}
