@@ -13,6 +13,7 @@ django-browser-reload==1.21.0
 django-tailwind==4.4.2
 djlint==1.36.4
 EditorConfig==0.17.1
+et_xmlfile==2.0.0
 honcho==2.0.0
 idna==3.11
 Jinja2==3.1.6
@@ -21,6 +22,9 @@ json5==0.13.0
 markdown-it-py==4.0.0
 MarkupSafe==3.0.3
 mdurl==0.1.2
+numpy==2.4.2
+openpyxl==3.1.5
+pandas==3.0.0
 pathspec==1.0.4
 Pygments==2.19.2
 pytailwindcss==0.3.0

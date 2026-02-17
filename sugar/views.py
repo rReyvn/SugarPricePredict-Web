@@ -43,6 +43,38 @@ def dashboard_view(request):
         with open(file_path, "wb+") as destination:
             for chunk in file.chunks():
                 destination.write(chunk)
+        
+        try:
+            import pandas as pd
+            df = pd.read_excel(file_path)
+            
+            dates = []
+            for col in df.columns:
+                try:
+                    # The user specified the format '%d/ %m/ %y', but the file shows '%d/ %m/ %Y'.
+                    # I will trust the file content.
+                    dates.append(pd.to_datetime(col, format='%d/ %m/ %Y'))
+                except (ValueError, TypeError):
+                    continue
+            
+            if dates:
+                start_date = min(dates).strftime('%Y-%m-%d')
+                end_date = max(dates).strftime('%Y-%m-%d')
+                
+                _, file_extension = os.path.splitext(file.name)
+                new_filename = f"{start_date}_{end_date}{file_extension}"
+                new_file_path = os.path.join(upload_dir, new_filename)
+                
+                os.rename(file_path, new_file_path)
+                print(f"File successfully renamed to {new_filename}")
+            else:
+                print("No dates found in the column headers of the uploaded file.")
+
+        except Exception as e:
+            # log the error and continue with original filename
+            print(f"An error occurred during file processing: {e}")
+            pass
+
         return redirect("dashboard")
 
     uploaded_files = []
