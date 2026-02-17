@@ -7,26 +7,24 @@
         <div class="flex justify-between items-center mb-4">
             <h1 class="text-2xl font-bold">Dashboard</h1>
             <a href="{% url 'logout' %}"
-               class="flex items-center justify-center space-x-2 rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-200">
+               class="flex items-center justify-center rounded-full bg-gray-100 p-2 text-gray-800 hover:bg-gray-200">
                 <svg width="20px"
                      height="20px"
-                     stroke-width="1.5"
+                     stroke-width="2"
                      viewBox="0 0 24 24"
                      fill="none"
                      xmlns="http://www.w3.org/2000/svg"
                      color="currentColor">
-                    <path d="M15 12H3m0 0l3.5-3.5M3 12l3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 12H3m0 0l3.5-3.5M3 12l3.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     </path>
-                    <path d="M10 6V5a1 1 0 011-1h9a1 1 0 011 1v14a1 1 0 01-1 1h-9a1 1 0 01-1-1v-1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10 6V5a1 1 0 011-1h9a1 1 0 011 1v14a1 1 0 01-1 1h-9a1 1 0 01-1-1v-1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     </path>
                 </svg>
-                <span>Logout</span>
             </a>
         </div>
         <div class="p-6 bg-white rounded-2xl shadow-md">
-            <!-- File Upload Section -->
-            <div>
-                <h2 class="text-xl font-semibold mb-4">Upload Excel Dataset</h2>
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold">Dataset</h2>
                 <form action="{% url 'dashboard' %}"
                       method="post"
                       enctype="multipart/form-data">
@@ -37,30 +35,23 @@
                                accept=".xls,.xlsx"
                                class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                         <button type="submit"
-                                class="ml-4 inline-flex items-center justify-center space-x-2 rounded-lg bg-indigo-600 px-6 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring focus:ring-indigo-500 active:bg-indigo-800">
+                                class="ml-4 inline-flex items-center justify-center rounded-full bg-indigo-600 p-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring focus:ring-indigo-500 active:bg-indigo-800">
                             <svg width="20px"
                                  height="20px"
-                                 stroke-width="1.5"
+                                 stroke-width="2"
                                  viewBox="0 0 24 24"
                                  fill="none"
                                  xmlns="http://www.w3.org/2000/svg"
                                  color="currentColor">
-                                <path d="M12 15l-3-3m3 3l3-3m-3 3V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                </path>
-                                <path d="M8.5 19H6a4 4 0 01-4-4v-2.5a4.5 4.5 0 014.5-4.5A4.5 4.5 0 0111 6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                </path>
-                                <path d="M15.5 19H18a4 4 0 004-4v-2.5a4.5 4.5 0 00-4.5-4.5A4.5 4.5 0 0013 6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                </path>
+                                <path d="M12 6v12m6-6H6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
                             </svg>
-                            <span>Upload</span>
                         </button>
                     </div>
                 </form>
             </div>
-            <hr class="my-6">
+            <hr class="my-6 border-gray-200">
             <!-- Uploaded Files Section -->
             <div>
-                <h2 class="text-xl font-semibold mb-4">Uploaded Files</h2>
                 <div class="rounded-lg overflow-hidden border border-gray-200">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -100,12 +91,12 @@
                                                class="text-indigo-600 hover:text-indigo-900">
                                                 <svg width="20px"
                                                      height="20px"
-                                                     stroke-width="1.5"
                                                      viewBox="0 0 24 24"
                                                      fill="none"
                                                      xmlns="http://www.w3.org/2000/svg"
-                                                     color="currentColor">
-                                                    <path d="M6 18h12M12 6v8m0 0l-3-3m3 3l3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                                     color="currentColor"
+                                                     stroke-width="1.5">
+                                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M1.25 12C1.25 6.06294 6.06294 1.25 12 1.25C17.9371 1.25 22.75 6.06294 22.75 12C22.75 17.9371 17.9371 22.75 12 22.75C6.06294 22.75 1.25 17.9371 1.25 12ZM8.25 17C8.25 16.5858 8.58579 16.25 9 16.25L15 16.25C15.4142 16.25 15.75 16.5858 15.75 17C15.75 17.4142 15.4142 17.75 15 17.75H9C8.58579 17.75 8.25 17.4142 8.25 17ZM16.0303 10.0303L12.5303 13.5303C12.2374 13.8232 11.7626 13.8232 11.4697 13.5303L7.96967 10.0303C7.67678 9.73744 7.67678 9.26256 7.96967 8.96967C8.26256 8.67678 8.73744 8.67678 9.03033 8.96967L11.25 11.1893V6C11.25 5.58579 11.5858 5.25 12 5.25C12.4142 5.25 12.75 5.58579 12.75 6V11.1893L14.9697 8.96967C15.2626 8.67678 15.7374 8.67678 16.0303 8.96967C16.3232 9.26256 16.3232 9.73744 16.0303 10.0303Z" fill="currentColor">
                                                     </path>
                                                 </svg>
                                             </a>
@@ -113,12 +104,12 @@
                                                class="text-red-600 hover:text-red-900">
                                                 <svg width="20px"
                                                      height="20px"
-                                                     stroke-width="1.5"
                                                      viewBox="0 0 24 24"
                                                      fill="none"
                                                      xmlns="http://www.w3.org/2000/svg"
-                                                     color="currentColor">
-                                                    <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                                     color="currentColor"
+                                                     stroke-width="1.5">
+                                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M12 1.25C6.06294 1.25 1.25 6.06294 1.25 12C1.25 17.9371 6.06294 22.75 12 22.75C17.9371 22.75 22.75 17.9371 22.75 12C22.75 6.06294 17.9371 1.25 12 1.25ZM9.70164 8.64124C9.40875 8.34835 8.93388 8.34835 8.64098 8.64124C8.34809 8.93414 8.34809 9.40901 8.64098 9.7019L10.9391 12L8.64098 14.2981C8.34809 14.591 8.34809 15.0659 8.64098 15.3588C8.93388 15.6517 9.40875 15.6517 9.70164 15.3588L11.9997 13.0607L14.2978 15.3588C14.5907 15.6517 15.0656 15.6517 15.3585 15.3588C15.6514 15.0659 15.6514 14.591 15.3585 14.2981L13.0604 12L15.3585 9.7019C15.6514 9.40901 15.6514 8.93414 15.3585 8.64124C15.0656 8.34835 14.5907 8.34835 14.2978 8.64124L11.9997 10.9393L9.70164 8.64124Z" fill="currentColor">
                                                     </path>
                                                 </svg>
                                             </a>
