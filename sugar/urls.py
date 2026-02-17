@@ -25,6 +25,8 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('dashboard/', views.dashboard_view, name='dashboard'),
     path('logout/', views.logout_view, name='logout'),
+    path('download/<str:filename>/', views.download_file, name='download_file'),
+    path('delete/<str:filename>/', views.delete_file, name='delete_file'),
 ]
 
 if settings.DEBUG:

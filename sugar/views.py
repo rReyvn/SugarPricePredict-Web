@@ -82,10 +82,21 @@ def dashboard_view(request):
         for entry in entries:
             if entry.is_file():
                 stat = entry.stat()
+                start_date, end_date = None, None
+                try:
+                    filename_without_ext, _ = os.path.splitext(entry.name)
+                    start_date_str, end_date_str = filename_without_ext.split('_')
+                    start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+                    end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+                except (ValueError, IndexError):
+                    pass # Keep start_date and end_date as None if parsing fails
+
                 uploaded_files.append(
                     {
                         "name": entry.name,
                         "upload_date": datetime.fromtimestamp(stat.st_mtime),
+                        "start_date": start_date,
+                        "end_date": end_date,
                     }
                 )
 
@@ -93,3 +104,27 @@ def dashboard_view(request):
     uploaded_files.sort(key=lambda x: x["upload_date"], reverse=True)
 
     return render(request, "dashboard.html", {"uploaded_files": uploaded_files})
+
+
+from django.http import HttpResponse, Http404
+
+def download_file(request, filename):
+    upload_dir = os.path.join(settings.BASE_DIR, "datasets")
+    file_path = os.path.join(upload_dir, filename)
+
+    if os.path.exists(file_path):
+        with open(file_path, 'rb') as fh:
+            response = HttpResponse(fh.read(), content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            response['Content-Disposition'] = 'inline; filename=' + os.path.basename(file_path)
+            return response
+    raise Http404
+
+def delete_file(request, filename):
+    upload_dir = os.path.join(settings.BASE_DIR, "datasets")
+    file_path = os.path.join(upload_dir, filename)
+
+    if os.path.exists(file_path):
+        os.remove(file_path)
+    
+    return redirect('dashboard')
+
