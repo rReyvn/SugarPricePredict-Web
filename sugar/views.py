@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.conf import settings
+from django.core.paginator import Paginator
 import os
 from datetime import datetime
 
@@ -14,7 +15,7 @@ def login_view(request):
         username = request.POST.get("username")
         password = request.POST.get("password")
         if username == "demo" and password == "demo":
-            request.session['is_authenticated'] = True
+            request.session["is_authenticated"] = True
             return redirect("dashboard")
         else:
             error = "Invalid username or password"
@@ -23,15 +24,15 @@ def login_view(request):
 
 def logout_view(request):
     try:
-        del request.session['is_authenticated']
+        del request.session["is_authenticated"]
     except KeyError:
         pass
-    return redirect('login')
+    return redirect("login")
 
 
 def dashboard_view(request):
-    if not request.session.get('is_authenticated'):
-        return redirect('login')
+    if not request.session.get("is_authenticated"):
+        return redirect("login")
 
     upload_dir = os.path.join(settings.BASE_DIR, "datasets")
     if not os.path.exists(upload_dir):
@@ -43,28 +44,29 @@ def dashboard_view(request):
         with open(file_path, "wb+") as destination:
             for chunk in file.chunks():
                 destination.write(chunk)
-        
+
         try:
             import pandas as pd
+
             df = pd.read_excel(file_path)
-            
+
             dates = []
             for col in df.columns:
                 try:
                     # The user specified the format '%d/ %m/ %y', but the file shows '%d/ %m/ %Y'.
                     # I will trust the file content.
-                    dates.append(pd.to_datetime(col, format='%d/ %m/ %Y'))
+                    dates.append(pd.to_datetime(col, format="%d/ %m/ %Y"))
                 except (ValueError, TypeError):
                     continue
-            
+
             if dates:
-                start_date = min(dates).strftime('%Y-%m-%d')
-                end_date = max(dates).strftime('%Y-%m-%d')
-                
+                start_date = min(dates).strftime("%Y-%m-%d")
+                end_date = max(dates).strftime("%Y-%m-%d")
+
                 _, file_extension = os.path.splitext(file.name)
                 new_filename = f"{start_date}_{end_date}{file_extension}"
                 new_file_path = os.path.join(upload_dir, new_filename)
-                
+
                 os.rename(file_path, new_file_path)
                 print(f"File successfully renamed to {new_filename}")
             else:
@@ -85,11 +87,11 @@ def dashboard_view(request):
                 start_date, end_date = None, None
                 try:
                     filename_without_ext, _ = os.path.splitext(entry.name)
-                    start_date_str, end_date_str = filename_without_ext.split('_')
-                    start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
-                    end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+                    start_date_str, end_date_str = filename_without_ext.split("_")
+                    start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+                    end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
                 except (ValueError, IndexError):
-                    pass # Keep start_date and end_date as None if parsing fails
+                    pass  # Keep start_date and end_date as None if parsing fails
 
                 uploaded_files.append(
                     {
@@ -103,21 +105,32 @@ def dashboard_view(request):
     # Sort files by upload date, newest first
     uploaded_files.sort(key=lambda x: x["upload_date"], reverse=True)
 
-    return render(request, "dashboard.html", {"uploaded_files": uploaded_files})
+    paginator = Paginator(uploaded_files, 5)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, "dashboard.html", {"uploaded_files": page_obj})
 
 
 from django.http import HttpResponse, Http404
+
 
 def download_file(request, filename):
     upload_dir = os.path.join(settings.BASE_DIR, "datasets")
     file_path = os.path.join(upload_dir, filename)
 
     if os.path.exists(file_path):
-        with open(file_path, 'rb') as fh:
-            response = HttpResponse(fh.read(), content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-            response['Content-Disposition'] = 'inline; filename=' + os.path.basename(file_path)
+        with open(file_path, "rb") as fh:
+            response = HttpResponse(
+                fh.read(),
+                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+            response["Content-Disposition"] = "inline; filename=" + os.path.basename(
+                file_path
+            )
             return response
     raise Http404
+
 
 def delete_file(request, filename):
     upload_dir = os.path.join(settings.BASE_DIR, "datasets")
@@ -125,6 +138,5 @@ def delete_file(request, filename):
 
     if os.path.exists(file_path):
         os.remove(file_path)
-    
-    return redirect('dashboard')
 
+    return redirect("dashboard")
