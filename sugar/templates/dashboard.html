@@ -7,6 +7,7 @@
         <div class="flex justify-between items-center mb-4">
             <h1 class="text-2xl font-bold">Dashboard</h1>
             <a href="{% url 'logout' %}"
+               title="Logout"
                class="flex items-center justify-center rounded-full bg-gray-100 p-2 text-gray-800 hover:bg-gray-200">
                 <svg width="20px"
                      height="20px"
@@ -30,12 +31,33 @@
                       enctype="multipart/form-data"
                       class="w-full sm:w-auto">
                     {% csrf_token %}
-                    <div class="flex items-center">
+                    <div class="flex items-center gap-4">
+                        <button type="button"
+                                title="Retrain model"
+                                class="ml-2 flex items-center justify-center rounded-full bg-gray-100 p-2 text-gray-800 hover:bg-gray-200">
+                            <svg width="20px"
+                                 height="20px"
+                                 stroke-width="1.5"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 xmlns="http://www.w3.org/2000/svg"
+                                 color="currentColor">
+                                <path d="M21.1679 8C19.6247 4.46819 16.1006 2 11.9999 2C6.81459 2 2.55104 5.94668 2.04932 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                </path>
+                                <path d="M17 8H21.4C21.7314 8 22 7.73137 22 7.4V3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                </path>
+                                <path d="M2.88146 16C4.42458 19.5318 7.94874 22 12.0494 22C17.2347 22 21.4983 18.0533 22 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                </path>
+                                <path d="M7.04932 16H2.64932C2.31795 16 2.04932 16.2686 2.04932 16.6V21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                </path>
+                            </svg>
+                        </button>
                         <input type="file"
                                name="excel_file"
                                accept=".xls,.xlsx"
                                class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                         <button type="submit"
+                                title="Upload file"
                                 class="ml-4 inline-flex items-center justify-center rounded-full bg-indigo-600 p-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring focus:ring-indigo-500 active:bg-indigo-800">
                             <svg width="20px"
                                  height="20px"
@@ -57,7 +79,7 @@
                             <tr>
                                 <th scope="col"
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    File Name
+                                    Dataset Name
                                 </th>
                                 <th scope="col"
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -87,6 +109,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center justify-center space-x-4">
                                             <a href="{% url 'download_file' filename=file.name %}"
+                                               title="Download file"
                                                class="flex items-center justify-center rounded-full p-2 text-indigo-600 hover:bg-indigo-100">
                                                 <svg width="20px"
                                                      height="20px"
@@ -102,6 +125,7 @@
                                                 </svg>
                                             </a>
                                             <a href="{% url 'delete_file' filename=file.name %}"
+                                               title="Delete file"
                                                class="flex items-center justify-center rounded-full p-2 text-red-600 hover:bg-red-100">
                                                 <svg width="20px"
                                                      height="20px"
@@ -123,7 +147,7 @@
                                 <tr>
                                     <td colspan="5"
                                         class="px-6 py-4 whitespace-nowrap text-center text-gray-500">
-                                        No files uploaded yet.
+                                        No datasets uploaded yet.
                                     </td>
                                 </tr>
                             {% endfor %}
