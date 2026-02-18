@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.conf import settings
 from django.core.paginator import Paginator
+from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponse, Http404
 from datetime import datetime
 import os
@@ -15,26 +16,25 @@ def login_view(request):
     if request.method == "POST":
         username = request.POST.get("username")
         password = request.POST.get("password")
-        if username == "demo" and password == "demo":
-            request.session["is_authenticated"] = True
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
             return redirect("dashboard")
         else:
             error = "Invalid username or password"
     return render(request, "login.html", {"error": error})
 
 
-def logout_view(request):
-    try:
-        del request.session["is_authenticated"]
-    except KeyError:
-        pass
+def logout_view(request):  #
+    logout(request)  #
     return redirect("login")
 
 
 from rfr_model.pipeline import LAST_TRAINING_TIMESTAMP_PATH
 
+
 def dashboard_view(request):
-    if not request.session.get("is_authenticated"):
+    if not request.user.is_authenticated:  #
         return redirect("login")
 
     upload_dir = os.path.join(settings.BASE_DIR, "datasets")
@@ -111,15 +111,15 @@ def dashboard_view(request):
     paginator = Paginator(uploaded_files, 5)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
-    
+
     # Get last trained timestamp
     last_trained_timestamp = None
     if os.path.exists(LAST_TRAINING_TIMESTAMP_PATH):
-        with open(LAST_TRAINING_TIMESTAMP_PATH, 'r') as f:
+        with open(LAST_TRAINING_TIMESTAMP_PATH, "r") as f:
             try:
                 last_trained_timestamp = datetime.fromisoformat(f.read().strip())
             except ValueError:
-                pass # Ignore if the file is malformed
+                pass  # Ignore if the file is malformed
 
     context = {
         "uploaded_files": page_obj,
