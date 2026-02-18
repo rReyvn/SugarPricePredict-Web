@@ -13,11 +13,15 @@ from .pipeline import (
     merge_data,
     load_and_prepare_df,
     forecast_future_data,
+    plot_combined_forecast, # Added
     MODEL_PATH,
     PROVINCE_MAP_PATH,
     EVAL_PLOT_PATH,
     LAST_TRAINING_TIMESTAMP_PATH,
     FORECAST_RESULTS_PATH,
+    COMBINED_PLOT_PATH, # Added
+    EVALUATION_METRICS_PATH, # Added
+    DF_TRANSFORMED_PATH, # Added
 )
 
 
@@ -66,11 +70,17 @@ def train_on_all_datasets_task():
         print("Generating forecast...")
         forecast_df = forecast_future_data(df_transformed, province_mapping, model)
         
+        # Generate and save combined plot
+        print("Generating combined historical and forecast plot...")
+        plot_combined_forecast(df_transformed, forecast_df, COMBINED_PLOT_PATH, title="Historical and Forecasted Sugar Prices (All Provinces)")
+
         # Save artifacts
         print("Saving model and artifacts...")
         joblib.dump(model, MODEL_PATH)
         joblib.dump(province_mapping, PROVINCE_MAP_PATH)
         joblib.dump(forecast_df, FORECAST_RESULTS_PATH)
+        joblib.dump(evaluation, EVALUATION_METRICS_PATH)
+        joblib.dump(df_transformed, DF_TRANSFORMED_PATH) # Added: Save df_transformed
         plot.savefig(EVAL_PLOT_PATH)
         plot.close()
         

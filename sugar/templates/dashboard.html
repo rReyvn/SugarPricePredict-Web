@@ -238,15 +238,45 @@
         <div id="results-container" class="mt-8">
             <!-- Training results will be loaded here -->
         </div>
+
+        <div class="p-6 bg-white rounded-2xl shadow-md mt-8">
+            <h2 class="text-xl font-semibold mb-4">Forecast Filters</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="province-select" class="block text-sm font-medium text-gray-700">Province:</label>
+                    <select id="province-select" name="province" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                        <option value="">All Provinces</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="horizon-select" class="block text-sm font-medium text-gray-700">Forecast Horizon (days):</label>
+                    <select id="horizon-select" name="horizon" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                        <option value="30">30 Days</option>
+                        <option value="60">60 Days</option>
+                        <option value="90">90 Days</option>
+                        <option value="120">120 Days</option>
+                        <option value="150">150 Days</option>
+                        <option value="180">180 Days</option>
+                    </select>
+                </div>
+            </div>
+        </div>
     </div>
     <script>
     document.addEventListener('DOMContentLoaded', function () {
         const trainButton = document.getElementById('train-all-btn');
         const statusContainer = document.getElementById('training-status-container');
+        const resultsContainer = document.getElementById('results-container');
+        const provinceSelect = document.getElementById('province-select');
+        const horizonSelect = document.getElementById('horizon-select');
     
         // Fetch initial results on page load
         fetchResults();
         
+        // Event listeners for dropdowns
+        provinceSelect.addEventListener('change', fetchResults);
+        horizonSelect.addEventListener('change', fetchResults);
+
         trainButton.addEventListener('click', function () {
             // Show a simple loading indicator
             trainButton.disabled = true;
@@ -287,9 +317,24 @@
         });
     
         function fetchResults() {
-            const resultsContainer = document.getElementById('results-container');
             resultsContainer.innerHTML = '<p class="text-center">Loading results...</p>';
-            fetch("{% url 'prediction_results' %}")
+
+            const selectedProvince = provinceSelect.value;
+            const selectedHorizon = horizonSelect.value;
+
+            let url = "{% url 'prediction_results' %}";
+            const params = new URLSearchParams();
+            if (selectedProvince) {
+                params.append('province', selectedProvince);
+            }
+            if (selectedHorizon) {
+                params.append('horizon', selectedHorizon);
+            }
+            if (params.toString()) {
+                url += `?${params.toString()}`;
+            }
+
+            fetch(url)
                 .then(response => {
                     if (!response.ok) {
                         return response.json().then(err => { throw new Error(err.error) });
@@ -297,16 +342,40 @@
                     return response.json();
                 })
                 .then(data => {
+                    // Populate province dropdown
+                    if (data.provinces && provinceSelect.options.length <= 1) { // Only populate once if not already
+                        data.provinces.forEach(province => {
+                            const option = document.createElement('option');
+                            option.value = province;
+                            option.textContent = province;
+                            provinceSelect.appendChild(option);
+                        });
+                    }
+                    // Set selected values
+                    if (data.selected_province) {
+                        provinceSelect.value = data.selected_province;
+                    } else {
+                        provinceSelect.value = ""; // "All Provinces"
+                    }
+                    if (data.selected_horizon) {
+                        horizonSelect.value = data.selected_horizon;
+                    }
+
+
                     resultsContainer.innerHTML = `
                         <div class="p-6 bg-white rounded-2xl shadow-md">
                             <h2 class="text-xl font-semibold mb-4">Prediction Results</h2>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div class="md:col-span-2">
+                                    <h3 class="text-lg font-semibold mb-2">Historical and Forecasted Prices</h3>
+                                    <img src="${data.combined_plot}" alt="Combined Historical and Forecast Plot" class="rounded-lg shadow-md mb-4" />
                                     <h3 class="text-lg font-semibold mb-2">6-Month Forecast</h3>
                                     <div class="rounded-lg overflow-y-auto max-h-96 border border-gray-200">${data.forecast_table}</div>
                                 </div>
                                 <div>
                                     <h3 class="text-lg font-semibold mb-2">Model Evaluation</h3>
+                                    <p class="text-gray-700 mb-2">RMSE: ${data.rmse.toFixed(2)}</p>
+                                    <p class="text-gray-700 mb-4">MAPE: ${data.mape.toFixed(2)}%</p>
                                     <img src="${data.plot}" alt="Model Evaluation Plot" class="rounded-lg shadow-md" />
                                 </div>
                             </div>
@@ -318,6 +387,7 @@
                         <div class="p-6 bg-white rounded-2xl shadow-md text-center">
                             <h2 class="text-xl font-semibold mb-2">No Results Yet</h2>
                             <p class="text-gray-500">The model has not been trained yet. Click the "Retrain model" button to generate the first prediction.</p>
+                            <p class="text-red-500 mt-2">Error: ${error.message}</p>
                         </div>
                     `;
                     console.warn('Could not fetch results:', error.message);

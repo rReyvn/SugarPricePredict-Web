@@ -17,6 +17,9 @@ PROVINCE_MAP_PATH = os.path.join(MODEL_DIR, "province_mapping.joblib")
 EVAL_PLOT_PATH = os.path.join(MODEL_DIR, "evaluation_plot.png")
 LAST_TRAINING_TIMESTAMP_PATH = os.path.join(MODEL_DIR, "last_training_timestamp.txt")
 FORECAST_RESULTS_PATH = os.path.join(MODEL_DIR, "forecast_results.joblib")
+COMBINED_PLOT_PATH = os.path.join(MODEL_DIR, "combined_forecast_plot.png")
+EVALUATION_METRICS_PATH = os.path.join(MODEL_DIR, "evaluation_metrics.joblib")
+DF_TRANSFORMED_PATH = os.path.join(MODEL_DIR, "df_transformed.joblib")
 
 
 def load_and_prepare_df(file_path):
@@ -246,6 +249,7 @@ def forecast_future_data(
     province_mapping: dict,
     model: RandomForestRegressor,
     horizon: int = 180,
+    selected_province: str = None, # Added parameter
 ):
     """
     Forecasts future sugar prices for a given horizon using a trained model.
@@ -261,7 +265,12 @@ def forecast_future_data(
         return (ts.normalize() - eid_date).days
 
     forecast_results = []
-    provinces = df_transform["Province"].unique()
+    
+    # Filter provinces if selected_province is provided
+    if selected_province:
+        provinces = [selected_province]
+    else:
+        provinces = df_transform["Province"].unique()
 
     # The notebook trains a new model here. We will use the one passed as a parameter.
     # Re-fitting the model on the full dataset before forecasting
@@ -341,3 +350,53 @@ def forecast_future_data(
     df_forecast = pd.DataFrame(forecast_results)
     df_forecast = df_forecast.sort_values(["Province", "Date"]).reset_index(drop=True)
     return df_forecast
+
+
+def plot_combined_forecast(
+    df_historical: pd.DataFrame, # Changed from df_transform
+    df_predicted: pd.DataFrame, # Changed from df_forecast
+    file_path: str,
+    title: str = "Historical and Forecasted Sugar Prices", # Added title parameter
+):
+    """
+    Plots historical and forecasted sugar prices. Can plot for individual provinces or mean.
+    """
+    plt.figure(figsize=(15, 7))
+    
+    # Check if we are plotting mean or individual provinces
+    if "Province" in df_historical.columns and len(df_historical["Province"].unique()) > 1:
+        # Plotting individual provinces
+        for province in df_historical["Province"].unique():
+            hist_data = df_historical[df_historical["Province"] == province]
+            pred_data = df_predicted[df_predicted["Province"] == province]
+
+            plt.plot(
+                hist_data["Date"], hist_data["Price"], label=f"{province} Historical"
+            )
+            plt.plot(
+                pred_data["Date"],
+                pred_data["Prediction"],
+                label=f"{province} Forecast",
+                linestyle="--",
+            )
+    else:
+        # Plotting mean or a single province (where 'Province' column might not exist or has one unique value)
+        plt.plot(
+            df_historical["Date"], df_historical["Price"], label="Historical"
+        )
+        plt.plot(
+            df_predicted["Date"],
+            df_predicted["Prediction"],
+            label="Forecast",
+            linestyle="--",
+        )
+
+    plt.title(title)
+    plt.xlabel("Date")
+    plt.ylabel("Price")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(file_path)
+    plt.close()
+
