@@ -1,8 +1,9 @@
 from django.shortcuts import render, redirect
 from django.conf import settings
 from django.core.paginator import Paginator
-import os
+from django.http import HttpResponse, Http404
 from datetime import datetime
+import os
 
 
 def home(request):
@@ -110,9 +111,6 @@ def dashboard_view(request):
     page_obj = paginator.get_page(page_number)
 
     return render(request, "dashboard.html", {"uploaded_files": page_obj})
-
-
-from django.http import HttpResponse, Http404
 
 
 def download_file(request, filename):
