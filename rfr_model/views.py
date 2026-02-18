@@ -104,6 +104,7 @@ def prediction_results_view(request):
             # Filter for specific province
             df_for_table = forecast_df_full[forecast_df_full["Province"] == selected_province].copy()
             df_for_table = df_for_table[df_for_table['Date'] <= (df_for_table['Date'].min() + pd.Timedelta(days=horizon-1))].copy()
+            df_for_table['Prediction'] = df_for_table['Prediction'].round(0)
 
             df_historical_for_plot = df_transformed[df_transformed["Province"] == selected_province].copy()
             df_predicted_for_plot = forecast_df_full[forecast_df_full["Province"] == selected_province].copy()
@@ -114,8 +115,9 @@ def prediction_results_view(request):
         else: # "All Provinces" selected - Calculate mean
             # Mean for table (forecast only)
             df_for_table = forecast_df_full.groupby("Date")["Prediction"].mean().reset_index()
-            df_for_table["Province"] = "Mean" # Add Province column for consistent display
+            df_for_table["Province"] = "All" # Add Province column for consistent display
             df_for_table = df_for_table[df_for_table['Date'] <= (df_for_table['Date'].min() + pd.Timedelta(days=horizon-1))].copy()
+            df_for_table['Prediction'] = df_for_table['Prediction'].round(0)
 
             # Mean historical for plot
             df_historical_for_plot = df_transformed.groupby("Date")["Price"].mean().reset_index()
@@ -133,6 +135,12 @@ def prediction_results_view(request):
         # Rename 'Prediction' to 'Price' for table display consistency if showing mean forecast
         if not selected_province:
             df_for_table = df_for_table.rename(columns={'Prediction': 'Price'})
+
+        # Convert the price column to int to remove .0 decimals
+        if 'Price' in df_for_table.columns:
+            df_for_table['Price'] = df_for_table['Price'].astype(int)
+        elif 'Prediction' in df_for_table.columns:
+            df_for_table['Prediction'] = df_for_table['Prediction'].astype(int)
 
         df_for_table["Date"] = df_for_table["Date"].dt.strftime("%d-%m-%Y")
 
