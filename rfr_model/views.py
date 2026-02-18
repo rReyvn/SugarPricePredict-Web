@@ -49,10 +49,16 @@ def prediction_results_view(request):
         # Load the pre-computed forecast DataFrame
         forecast_df = joblib.load(FORECAST_RESULTS_PATH)
 
+        # Format 'Date' column to 'd-m-Y'
+        forecast_df["Date"] = forecast_df["Date"].dt.strftime("%d-%m-%Y")
+
         # Prepare forecast table
         forecast_table_html = forecast_df.to_html(
             classes="min-w-full divide-y divide-gray-200", border=0, index=False
         )
+        # Manually add classes to th and td for alignment and spacing
+        forecast_table_html = forecast_table_html.replace('<th>', '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">')
+        forecast_table_html = forecast_table_html.replace('<td>', '<td class="px-6 py-4 whitespace-nowrap text-left">')
 
         # Encode plot to base64
         with open(EVAL_PLOT_PATH, "rb") as image_file:
