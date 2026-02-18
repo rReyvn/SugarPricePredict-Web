@@ -7,6 +7,9 @@ local_settings.py
 db.sqlite3
 .venv
 datasets/
+/3
+rfr/output/
+theme/static/css/dist/
 
 # Node
 node_modules/
