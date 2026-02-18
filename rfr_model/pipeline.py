@@ -6,6 +6,39 @@ from sklearn.metrics import root_mean_squared_error, mean_absolute_percentage_er
 from sklearn import tree
 from hijridate import Hijri, Gregorian
 from pathlib import Path
+import os
+from django.conf import settings
+
+# Define paths for model artifacts
+MODEL_DIR = os.path.join(settings.BASE_DIR, "rfr", "output", "model")
+os.makedirs(MODEL_DIR, exist_ok=True)
+MODEL_PATH = os.path.join(MODEL_DIR, "rfr_model.joblib")
+PROVINCE_MAP_PATH = os.path.join(MODEL_DIR, "province_mapping.joblib")
+EVAL_PLOT_PATH = os.path.join(MODEL_DIR, "evaluation_plot.png")
+LAST_TRAINING_TIMESTAMP_PATH = os.path.join(MODEL_DIR, "last_training_timestamp.txt")
+FORECAST_RESULTS_PATH = os.path.join(MODEL_DIR, "forecast_results.joblib")
+
+
+def load_and_prepare_df(file_path):
+    """
+    Loads an Excel file and prepares it for cleaning by ensuring
+    it has a 'Province' column.
+    """
+    df = pd.read_excel(file_path)
+
+    # Safely drop "No" column if it exists
+    if "No" in df.columns:
+        df = df.drop(columns=["No"])
+
+    # Check for "Province" or "Komoditas (Rp)"
+    if "Province" in df.columns:
+        return df
+    elif "Komoditas (Rp)" in df.columns:
+        return df.rename(columns={"Komoditas (Rp)": "Province"})
+    else:
+        raise ValueError(
+            f"File '{os.path.basename(file_path)}' is missing a 'Province' or 'Komoditas (Rp)' column."
+        )
 
 
 def clean_data(df_raw: pd.DataFrame) -> pd.DataFrame:
@@ -43,7 +76,9 @@ def clean_data(df_raw: pd.DataFrame) -> pd.DataFrame:
 
     # Forward/Backward Fill Based on Each Province
     df_long = (
-        df_long.groupby("Province", sort=False, group_keys=False)[["Date", "Price", "Province"]]
+        df_long.groupby("Province", sort=False, group_keys=False)[
+            ["Date", "Price", "Province"]
+        ]
         .apply(
             lambda g: (
                 g.set_index("Date")
@@ -66,20 +101,39 @@ def clean_data(df_raw: pd.DataFrame) -> pd.DataFrame:
     # Sort by date and province
     df_long = df_long.sort_values(["Date", "Province"]).reset_index(drop=True)
     df_long["Price"] = df_long["Price"].round().astype(int)
-    
+
     return df_long
+
+
+def merge_data(list_of_dfs: list[pd.DataFrame]) -> pd.DataFrame:
+    """
+    Merges a list of cleaned DataFrames into a single DataFrame.
+    """
+    if not list_of_dfs:
+        return pd.DataFrame()
+
+    # Merge all dataframes
+    df_merged = pd.concat(list_of_dfs, ignore_index=True)
+
+    # Sort and drop duplicate each province and date, keeping the last entry
+    df_merged = df_merged.drop_duplicates(
+        subset=["Province", "Date"], keep="last"
+    ).reset_index(drop=True)
+
+    return df_merged
+
 
 def transform_data(df: pd.DataFrame) -> pd.DataFrame:
     """
     Engineers features for the model, including province IDs, lag features,
     and holiday features.
     """
-    
+
     # Helper functions for holiday features
     def eid_delta_days(ts: pd.Timestamp) -> int:
         g = Gregorian(ts.year, ts.month, ts.day)
         h = g.to_hijri()
-        eid_h = Hijri(h.year, 10, 1) # 1 Syawal
+        eid_h = Hijri(h.year, 10, 1)  # 1 Syawal
         eid_g = eid_h.to_gregorian()
         eid_date = pd.Timestamp(eid_g.year, eid_g.month, eid_g.day)
         return (ts.normalize() - eid_date).days
@@ -99,7 +153,9 @@ def transform_data(df: pd.DataFrame) -> pd.DataFrame:
     # Feature Engineering
     # 1) Province -> numeric (ID)
     province_mean_prices = df.groupby("Province")["Price"].mean().sort_values()
-    province_mapping = {province: i for i, province in enumerate(province_mean_prices.index)}
+    province_mapping = {
+        province: i for i, province in enumerate(province_mean_prices.index)
+    }
     df["Province_id"] = df["Province"].map(province_mapping)
 
     # 2) Lag features
@@ -115,8 +171,9 @@ def transform_data(df: pd.DataFrame) -> pd.DataFrame:
 
     # Drop rows with no lag features
     df_transform = df.dropna(subset=["lag_1", "lag_14"]).reset_index(drop=True)
-    
+
     return df_transform, province_mapping
+
 
 def train_model(df_mining: pd.DataFrame):
     """
@@ -130,10 +187,19 @@ def train_model(df_mining: pd.DataFrame):
         max_features="sqrt",
         bootstrap=True,
         random_state=42,
-        n_jobs=-1,
+        n_jobs=1,
     )
     train_size = 0.9
-    FEATURE_COLS = ["Province_id", "lag_1", "lag_14", "before_eid", "eid", "after_eid", "month", "year"]
+    FEATURE_COLS = [
+        "Province_id",
+        "lag_1",
+        "lag_14",
+        "before_eid",
+        "eid",
+        "after_eid",
+        "month",
+        "year",
+    ]
     TARGET_COL = "Price"
 
     # Specify X for features and y for target
@@ -154,10 +220,10 @@ def train_model(df_mining: pd.DataFrame):
     # Evaluation Metrics
     rmse = root_mean_squared_error(y_test, y_pred)
     mape = mean_absolute_percentage_error(y_test, y_pred) * 100
-    
+
     # Prepare results for presentation
     evaluation = {"RMSE": rmse, "MAPE": mape}
-    
+
     # Create scatter plot for visualization
     plt.figure(figsize=(5, 5))
     plt.scatter(y_test, y_pred, alpha=0.6)
@@ -168,17 +234,23 @@ def train_model(df_mining: pd.DataFrame):
     plt.xlabel("Actual")
     plt.ylabel("Prediction")
     plt.tight_layout()
-    
+
     # The plot is returned to be handled by the view (e.g., save to buffer)
     plot = plt
 
     return model, evaluation, plot
 
-def forecast_future_data(df_transform: pd.DataFrame, province_mapping: dict, model: RandomForestRegressor, horizon: int = 180):
+
+def forecast_future_data(
+    df_transform: pd.DataFrame,
+    province_mapping: dict,
+    model: RandomForestRegressor,
+    horizon: int = 180,
+):
     """
     Forecasts future sugar prices for a given horizon using a trained model.
     """
-    
+
     # Helper functions for holiday features
     def eid_delta_days(ts: pd.Timestamp) -> int:
         g = Gregorian(ts.year, ts.month, ts.day)
@@ -187,13 +259,22 @@ def forecast_future_data(df_transform: pd.DataFrame, province_mapping: dict, mod
         eid_g = eid_h.to_gregorian()
         eid_date = pd.Timestamp(eid_g.year, eid_g.month, eid_g.day)
         return (ts.normalize() - eid_date).days
-        
+
     forecast_results = []
     provinces = df_transform["Province"].unique()
-    
+
     # The notebook trains a new model here. We will use the one passed as a parameter.
     # Re-fitting the model on the full dataset before forecasting
-    FEATURE_COLS = ["Province_id", "lag_1", "lag_14", "before_eid", "eid", "after_eid", "month", "year"]
+    FEATURE_COLS = [
+        "Province_id",
+        "lag_1",
+        "lag_14",
+        "before_eid",
+        "eid",
+        "after_eid",
+        "month",
+        "year",
+    ]
     TARGET_COL = "Price"
     X_full = df_transform[FEATURE_COLS]
     y_full = df_transform[TARGET_COL]
@@ -210,34 +291,51 @@ def forecast_future_data(df_transform: pd.DataFrame, province_mapping: dict, mod
 
         for i in range(1, horizon + 1):
             next_date = last_date + pd.Timedelta(days=i)
-            
-            month = next_date.month
-            year  = next_date.year
 
-            lag_1  = last_rows.iloc[-1]["Price"]
+            month = next_date.month
+            year = next_date.year
+
+            lag_1 = last_rows.iloc[-1]["Price"]
             lag_14 = last_rows.iloc[-14]["Price"] if len(last_rows) >= 14 else lag_1
 
             d = eid_delta_days(next_date)
             before_eid = 1 if -7 <= d <= -1 else 0
             eid_day = 1 if d == 0 else 0
             after_eid = 1 if 1 <= d <= 6 else 0
-            
-            X_future = pd.DataFrame({
-                "Province_id": [prov_id], "lag_1": [lag_1], "lag_14": [lag_14],
-                "before_eid": [before_eid], "eid": [eid_day], "after_eid": [after_eid],
-                "month": [month], "year": [year]
-            })
+
+            X_future = pd.DataFrame(
+                {
+                    "Province_id": [prov_id],
+                    "lag_1": [lag_1],
+                    "lag_14": [lag_14],
+                    "before_eid": [before_eid],
+                    "eid": [eid_day],
+                    "after_eid": [after_eid],
+                    "month": [month],
+                    "year": [year],
+                }
+            )
 
             predicted_price = model.predict(X_future)[0]
 
-            forecast_results.append({
-                "Date": next_date, "Province": prov, "Prediction": round(predicted_price),
-            })
+            forecast_results.append(
+                {
+                    "Date": next_date,
+                    "Province": prov,
+                    "Prediction": round(predicted_price),
+                }
+            )
 
-            new_row = pd.DataFrame([{
-                "Date": next_date, "Price": predicted_price,
-                "Province": prov, "Province_id": prov_id,
-            }])
+            new_row = pd.DataFrame(
+                [
+                    {
+                        "Date": next_date,
+                        "Price": predicted_price,
+                        "Province": prov,
+                        "Province_id": prov_id,
+                    }
+                ]
+            )
             last_rows = pd.concat([last_rows, new_row], ignore_index=True)
 
     df_forecast = pd.DataFrame(forecast_results)

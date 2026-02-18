@@ -31,6 +31,8 @@ def logout_view(request):
     return redirect("login")
 
 
+from rfr_model.pipeline import LAST_TRAINING_TIMESTAMP_PATH
+
 def dashboard_view(request):
     if not request.session.get("is_authenticated"):
         return redirect("login")
@@ -109,8 +111,22 @@ def dashboard_view(request):
     paginator = Paginator(uploaded_files, 5)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
+    
+    # Get last trained timestamp
+    last_trained_timestamp = None
+    if os.path.exists(LAST_TRAINING_TIMESTAMP_PATH):
+        with open(LAST_TRAINING_TIMESTAMP_PATH, 'r') as f:
+            try:
+                last_trained_timestamp = datetime.fromisoformat(f.read().strip())
+            except ValueError:
+                pass # Ignore if the file is malformed
 
-    return render(request, "dashboard.html", {"uploaded_files": page_obj})
+    context = {
+        "uploaded_files": page_obj,
+        "last_trained_timestamp": last_trained_timestamp,
+    }
+
+    return render(request, "dashboard.html", context)
 
 
 def download_file(request, filename):
