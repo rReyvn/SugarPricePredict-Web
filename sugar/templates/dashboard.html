@@ -432,7 +432,7 @@
                         const minDateStr = data.prediction_start_date;
                         
                         const maxDate = new Date(minDateStr);
-                        maxDate.setUTCDate(maxDate.getUTCDate() + 179); // 180 days total range
+                        maxDate.setUTCDate(maxDate.getUTCDate() + 89); // 90 days total range
 
                         const maxYear = maxDate.getUTCFullYear();
                         const maxMonth = (maxDate.getUTCMonth() + 1).toString().padStart(2, '0');
