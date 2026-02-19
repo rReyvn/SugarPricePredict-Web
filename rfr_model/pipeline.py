@@ -249,7 +249,7 @@ def forecast_future_data(
     province_mapping: dict,
     model: RandomForestRegressor,
     horizon: int = 180,
-    selected_province: str = None, # Added parameter
+    selected_province: str = None,  # Added parameter
 ):
     """
     Forecasts future sugar prices for a given horizon using a trained model.
@@ -265,7 +265,7 @@ def forecast_future_data(
         return (ts.normalize() - eid_date).days
 
     forecast_results = []
-    
+
     # Filter provinces if selected_province is provided
     if selected_province:
         provinces = [selected_province]
@@ -355,7 +355,7 @@ def forecast_future_data(
 def plot_combined_forecast(
     df_historical: pd.DataFrame,
     df_predicted: pd.DataFrame,
-    title: str = "Historical and Forecasted Sugar Prices",
+    title: str = "Forecasted Sugar Prices",
 ):
     """
     Prepares historical and forecasted sugar prices data for client-side plotting with Plotly.
@@ -364,55 +364,68 @@ def plot_combined_forecast(
     traces = []
 
     # Historical data trace
-    if "Province" in df_historical.columns and len(df_historical["Province"].unique()) > 1:
+    if (
+        "Province" in df_historical.columns
+        and len(df_historical["Province"].unique()) > 1
+    ):
         # Plotting individual provinces
         for province in df_historical["Province"].unique():
             hist_data = df_historical[df_historical["Province"] == province]
-            traces.append({
-                'x': hist_data["Date"].dt.strftime('%Y-%m-%d').tolist(),
-                'y': hist_data["Price"].tolist(),
-                'mode': 'lines',
-                'name': f"{province} Historical",
-                'line': {'color': 'blue'}
-            })
+            traces.append(
+                {
+                    "x": hist_data["Date"].dt.strftime("%Y-%m-%d").tolist(),
+                    "y": hist_data["Price"].tolist(),
+                    "mode": "lines",
+                    "name": f"{province} Historical",
+                    "line": {"color": "blue"},
+                }
+            )
     else:
         # Plotting mean or a single province
-        traces.append({
-            'x': df_historical["Date"].dt.strftime('%Y-%m-%d').tolist(),
-            'y': df_historical["Price"].tolist(),
-            'mode': 'lines',
-            'name': "Historical",
-            'line': {'color': 'blue'}
-        })
-    
+        traces.append(
+            {
+                "x": df_historical["Date"].dt.strftime("%Y-%m-%d").tolist(),
+                "y": df_historical["Price"].tolist(),
+                "mode": "lines",
+                "name": "Historical",
+                "line": {"color": "blue"},
+            }
+        )
+
     # Predicted data trace
-    if "Province" in df_predicted.columns and len(df_predicted["Province"].unique()) > 1:
+    if (
+        "Province" in df_predicted.columns
+        and len(df_predicted["Province"].unique()) > 1
+    ):
         # Plotting individual provinces
         for province in df_predicted["Province"].unique():
             pred_data = df_predicted[df_predicted["Province"] == province]
-            traces.append({
-                'x': pred_data["Date"].dt.strftime('%Y-%m-%d').tolist(),
-                'y': pred_data["Prediction"].tolist(),
-                'mode': 'lines',
-                'name': f"{province} Forecast",
-                'line': {'dash': 'dash', 'color': 'red'}
-            })
+            traces.append(
+                {
+                    "x": pred_data["Date"].dt.strftime("%Y-%m-%d").tolist(),
+                    "y": pred_data["Prediction"].tolist(),
+                    "mode": "lines",
+                    "name": f"{province} Forecast",
+                    "line": {"dash": "dash", "color": "red"},
+                }
+            )
     else:
         # Plotting mean or a single province
-        traces.append({
-            'x': df_predicted["Date"].dt.strftime('%Y-%m-%d').tolist(),
-            'y': df_predicted["Prediction"].tolist(),
-            'mode': 'lines',
-            'name': "Forecast",
-            'line': {'dash': 'dash', 'color': 'red'}
-        })
+        traces.append(
+            {
+                "x": df_predicted["Date"].dt.strftime("%Y-%m-%d").tolist(),
+                "y": df_predicted["Prediction"].tolist(),
+                "mode": "lines",
+                "name": "Forecast",
+                "line": {"dash": "dash", "color": "red"},
+            }
+        )
 
     layout = {
-        'title': title,
-        'xaxis': {'title': 'Date'},
-        'yaxis': {'title': 'Price'},
-        'hovermode': 'x unified'
+        "title": title,
+        "xaxis": {"title": "Date"},
+        "yaxis": {"title": "Price"},
+        "hovermode": "x unified",
     }
 
-    return {'data': traces, 'layout': layout}
-
+    return {"data": traces, "layout": layout}

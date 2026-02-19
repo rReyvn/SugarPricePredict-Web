@@ -173,7 +173,7 @@
             <!-- Training results will be loaded here -->
         </div>
     </div>
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-3.3.0.min.js" charset="utf-8"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function () {
         const trainButton = document.getElementById('train-all-btn');
@@ -195,27 +195,38 @@
 
 
         trainButton.addEventListener('click', function () {
-            // Show a simple loading indicator
+            const originalContent = trainButton.innerHTML;
             trainButton.disabled = true;
-            statusContainer.innerHTML = `
-                <div class="flex items-center justify-center rounded-full bg-yellow-500 p-2 text-white">
-                    <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                      </path>
-                    </svg>
-                </div>`;
+            trainButton.innerHTML = `
+                <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                  </path>
+                </svg>`;
     
-            // Start training
             fetch("{% url 'start_training' %}", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': '{{ csrf_token }}' 
                 },
-                body: JSON.stringify({}) // No filename needed
+                body: JSON.stringify({})
             })
-            .then(response => response.json())
+            .then(response => {
+                if (response.status === 409) { // Conflict - task already running
+                    return response.json().then(err => {
+                        alert(err.error || 'A training task is already in progress.');
+                        throw new Error('Task conflict');
+                    });
+                }
+                if (!response.ok) { // Other server errors
+                    return response.json().then(err => {
+                        alert('Failed to start training: ' + (err.error || 'Unknown server error.'));
+                        throw new Error('Server error');
+                    });
+                }
+                return response.json();
+            })
             .then(data => {
                 alert('Model training has started in the background. The "Last trained" date will update upon completion, and you can reload the page to see new results.');
                 setTimeout(() => {
@@ -223,11 +234,10 @@
                 }, 5000);
             })
             .catch(error => {
-                console.error('Error starting training:', error);
-                alert('Failed to start training. Check the console for errors.');
+                console.error('Error starting training:', error.message);
+                // Restore button on any error
                 trainButton.disabled = false;
-                statusContainer.innerHTML = '';
-                statusContainer.appendChild(trainButton);
+                trainButton.innerHTML = originalContent;
             });
         });
     
