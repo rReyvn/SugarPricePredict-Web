@@ -303,6 +303,29 @@
                     const provinceSelect = document.getElementById('province-select');
                     const horizonSelect = document.getElementById('horizon-select');
 
+                    // Set min/max date on the date picker based on when predictions can start
+                    if (data.prediction_start_date) {
+                        const minDateStr = data.prediction_start_date;
+                        
+                        const maxDate = new Date(minDateStr);
+                        maxDate.setUTCDate(maxDate.getUTCDate() + 179); // 180 days total range
+
+                        const maxYear = maxDate.getUTCFullYear();
+                        const maxMonth = (maxDate.getUTCMonth() + 1).toString().padStart(2, '0');
+                        const maxDay = maxDate.getUTCDate().toString().padStart(2, '0');
+                        const maxDateStr = `${maxYear}-${maxMonth}-${maxDay}`;
+
+                        horizonSelect.min = minDateStr;
+                        horizonSelect.max = maxDateStr;
+
+                        // Adjust current value if it's outside the new bounds
+                        if (horizonSelect.value < minDateStr) {
+                            horizonSelect.value = minDateStr;
+                        } else if (horizonSelect.value > maxDateStr) {
+                            horizonSelect.value = maxDateStr;
+                        }
+                    }
+
                     // Populate province dropdown
                     if (data.provinces) {
                         data.provinces.forEach(province => {

@@ -79,6 +79,9 @@ def prediction_results_view(request):
         evaluation_metrics = joblib.load(EVALUATION_METRICS_PATH)
         df_transformed = joblib.load(DF_TRANSFORMED_PATH) # Load the stored df_transformed
         
+        # Determine prediction start date (day after the last date in the historical data)
+        prediction_start_date = df_transformed['Date'].max() + pd.Timedelta(days=1)
+        
         # Get list of all provinces for the dropdown
         all_provinces = sorted(df_transformed["Province"].unique().tolist())
 
@@ -184,6 +187,7 @@ def prediction_results_view(request):
                 "provinces": all_provinces, # List of provinces for frontend dropdown
                 "selected_province": selected_province,
                 "selected_horizon": horizon,
+                "prediction_start_date": prediction_start_date.strftime('%Y-%m-%d'),
             }
         )
     except Exception as e:
