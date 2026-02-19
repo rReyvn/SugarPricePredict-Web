@@ -623,7 +623,7 @@
                 // Create a form dynamically to submit the delete request
                 const form = document.createElement('form');
                 form.method = 'POST';
-                form.action = `/delete_file/${fileToDelete}/`; // Construct the URL
+                form.action = `/delete/${fileToDelete}/`; // Construct the URL
                 
                 // Add CSRF token
                 const csrfInput = document.createElement('input');
