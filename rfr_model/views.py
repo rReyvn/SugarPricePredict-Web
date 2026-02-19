@@ -213,12 +213,12 @@ def prediction_results_view(request):
             encoded_string = base64.b64encode(image_file.read()).decode()
         plot_base64 = f"data:image/png;base64,{encoded_string}"
 
-        # Limit historical data to 6 months before prediction starts
+        # Limit historical data to 3 months before prediction starts
         if not df_predicted_for_plot.empty:
             prediction_start_date = df_predicted_for_plot["Date"].min()
-            six_months_before = prediction_start_date - pd.DateOffset(months=6)
+            three_months_before = prediction_start_date - pd.DateOffset(months=3)
             df_historical_for_plot = df_historical_for_plot[
-                df_historical_for_plot["Date"] >= six_months_before
+                df_historical_for_plot["Date"] >= three_months_before
             ].copy()
 
         # Generate Plotly data dynamically
