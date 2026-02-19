@@ -19,7 +19,6 @@ from .pipeline import (
     EVAL_PLOT_PATH,
     LAST_TRAINING_TIMESTAMP_PATH,
     FORECAST_RESULTS_PATH,
-    COMBINED_PLOT_PATH, # Added
     EVALUATION_METRICS_PATH, # Added
     DF_TRANSFORMED_PATH, # Added
 )
@@ -70,10 +69,6 @@ def train_on_all_datasets_task():
         print("Generating forecast...")
         forecast_df = forecast_future_data(df_transformed, province_mapping, model)
         
-        # Generate and save combined plot
-        print("Generating combined historical and forecast plot...")
-        plot_combined_forecast(df_transformed, forecast_df, COMBINED_PLOT_PATH, title="Historical and Forecasted Sugar Prices (All Provinces)")
-
         # Save artifacts
         print("Saving model and artifacts...")
         joblib.dump(model, MODEL_PATH)
