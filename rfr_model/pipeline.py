@@ -353,50 +353,66 @@ def forecast_future_data(
 
 
 def plot_combined_forecast(
-    df_historical: pd.DataFrame, # Changed from df_transform
-    df_predicted: pd.DataFrame, # Changed from df_forecast
-    file_path: str,
-    title: str = "Historical and Forecasted Sugar Prices", # Added title parameter
+    df_historical: pd.DataFrame,
+    df_predicted: pd.DataFrame,
+    title: str = "Historical and Forecasted Sugar Prices",
 ):
     """
-    Plots historical and forecasted sugar prices. Can plot for individual provinces or mean.
+    Prepares historical and forecasted sugar prices data for client-side plotting with Plotly.
+    Returns a dictionary with 'data' and 'layout' suitable for Plotly.js.
     """
-    plt.figure(figsize=(15, 7))
-    
-    # Check if we are plotting mean or individual provinces
+    traces = []
+
+    # Historical data trace
     if "Province" in df_historical.columns and len(df_historical["Province"].unique()) > 1:
         # Plotting individual provinces
         for province in df_historical["Province"].unique():
             hist_data = df_historical[df_historical["Province"] == province]
-            pred_data = df_predicted[df_predicted["Province"] == province]
-
-            plt.plot(
-                hist_data["Date"], hist_data["Price"], label=f"{province} Historical"
-            )
-            plt.plot(
-                pred_data["Date"],
-                pred_data["Prediction"],
-                label=f"{province} Forecast",
-                linestyle="--",
-            )
+            traces.append({
+                'x': hist_data["Date"].dt.strftime('%Y-%m-%d').tolist(),
+                'y': hist_data["Price"].tolist(),
+                'mode': 'lines',
+                'name': f"{province} Historical",
+                'line': {'color': 'blue'}
+            })
     else:
-        # Plotting mean or a single province (where 'Province' column might not exist or has one unique value)
-        plt.plot(
-            df_historical["Date"], df_historical["Price"], label="Historical"
-        )
-        plt.plot(
-            df_predicted["Date"],
-            df_predicted["Prediction"],
-            label="Forecast",
-            linestyle="--",
-        )
+        # Plotting mean or a single province
+        traces.append({
+            'x': df_historical["Date"].dt.strftime('%Y-%m-%d').tolist(),
+            'y': df_historical["Price"].tolist(),
+            'mode': 'lines',
+            'name': "Historical",
+            'line': {'color': 'blue'}
+        })
+    
+    # Predicted data trace
+    if "Province" in df_predicted.columns and len(df_predicted["Province"].unique()) > 1:
+        # Plotting individual provinces
+        for province in df_predicted["Province"].unique():
+            pred_data = df_predicted[df_predicted["Province"] == province]
+            traces.append({
+                'x': pred_data["Date"].dt.strftime('%Y-%m-%d').tolist(),
+                'y': pred_data["Prediction"].tolist(),
+                'mode': 'lines',
+                'name': f"{province} Forecast",
+                'line': {'dash': 'dash', 'color': 'red'}
+            })
+    else:
+        # Plotting mean or a single province
+        traces.append({
+            'x': df_predicted["Date"].dt.strftime('%Y-%m-%d').tolist(),
+            'y': df_predicted["Prediction"].tolist(),
+            'mode': 'lines',
+            'name': "Forecast",
+            'line': {'dash': 'dash', 'color': 'red'}
+        })
 
-    plt.title(title)
-    plt.xlabel("Date")
-    plt.ylabel("Price")
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig(file_path)
-    plt.close()
+    layout = {
+        'title': title,
+        'xaxis': {'title': 'Date'},
+        'yaxis': {'title': 'Price'},
+        'hovermode': 'x unified'
+    }
+
+    return {'data': traces, 'layout': layout}
 

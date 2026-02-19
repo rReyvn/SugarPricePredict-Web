@@ -169,21 +169,16 @@ def prediction_results_view(request):
             six_months_before = prediction_start_date - pd.DateOffset(months=6)
             df_historical_for_plot = df_historical_for_plot[df_historical_for_plot['Date'] >= six_months_before].copy()
         
-        # Generate and encode combined plot to base64 dynamically
-        buf = io.BytesIO()
-        plot_combined_forecast(df_historical_for_plot, df_predicted_for_plot, buf, title=plot_title)
-        buf.seek(0) # Rewind the buffer
-        combined_encoded_string = base64.b64encode(buf.read()).decode()
-        combined_plot_base64 = f"data:image/png;base64,{combined_encoded_string}"
-        buf.close()
+        # Generate Plotly data dynamically
+        plotly_combined_plot_data = plot_combined_forecast(df_historical_for_plot, df_predicted_for_plot, title=plot_title)
 
         return JsonResponse(
             {
                 "forecast_table": forecast_table_html,
-                "plot": plot_base64, # Original evaluation plot (Actual vs. Prediction)
+                "plot": plot_base64, # Original evaluation plot (Matplotlib)
                 "rmse": rmse_value,
                 "mape": mape_value,
-                "combined_plot": combined_plot_base64, # Dynamically generated combined plot
+                "combined_plot_data": plotly_combined_plot_data, # New Plotly JSON data
                 "provinces": all_provinces, # List of provinces for frontend dropdown
                 "selected_province": selected_province,
                 "selected_horizon": horizon,
