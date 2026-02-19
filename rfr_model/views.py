@@ -243,3 +243,103 @@ def prediction_results_view(request):
         return JsonResponse(
             {"error": f"Failed to generate results: {str(e)}"}, status=500
         )
+
+def prediction_table_view(request):
+    """
+    Generates and returns only the prediction table HTML based on
+    the selected province and horizon.
+    """
+    selected_province = request.GET.get("province")
+    horizon_str = request.GET.get("horizon", "180")  # Default to 180 days
+
+    try:
+        horizon = int(horizon_str)
+        if not (1 <= horizon <= 180):
+            raise ValueError("Horizon must be between 1 and 180.")
+    except ValueError as e:
+        return JsonResponse({"error": f"Invalid horizon value: {e}"}, status=400)
+
+    # Required files for generating the table
+    required_files_for_table = [
+        MODEL_PATH,
+        PROVINCE_MAP_PATH,
+        DF_TRANSFORMED_PATH,
+    ]
+
+    for f in required_files_for_table:
+        if not os.path.exists(f):
+            return JsonResponse(
+                {
+                    "error": f"Artifact {os.path.basename(f)} not found. Please train a model first."
+                },
+                status=404,
+            )
+
+    try:
+        # Load necessary artifacts
+        model = joblib.load(MODEL_PATH)
+        province_mapping = joblib.load(PROVINCE_MAP_PATH)
+        df_transformed = joblib.load(DF_TRANSFORMED_PATH)
+
+        # Get list of all provinces for validation
+        all_provinces = sorted(df_transformed["Province"].unique().tolist())
+        if selected_province and selected_province not in all_provinces:
+            return JsonResponse(
+                {"error": f"Province '{selected_province}' not found."}, status=400
+            )
+
+        # Generate forecast data dynamically
+        forecast_df_full = forecast_future_data(
+            df_transformed, province_mapping, model, horizon=horizon
+        )
+
+        df_for_table = None
+        if selected_province:
+            # Filter for specific province
+            df_for_table = forecast_df_full[
+                forecast_df_full["Province"] == selected_province
+            ].copy()
+        else:
+            # "All Provinces" - Calculate mean
+            df_for_table = (
+                forecast_df_full.groupby("Date")["Prediction"].mean().reset_index()
+            )
+            df_for_table["Province"] = "All"
+
+        # Trim to the exact horizon length
+        df_for_table = df_for_table[
+            df_for_table["Date"] <= (df_for_table["Date"].min() + pd.Timedelta(days=horizon - 1))
+        ].copy()
+
+        # Round and format for display
+        df_for_table["Prediction"] = df_for_table["Prediction"].round(0)
+        df_for_table["Date"] = df_for_table["Date"].dt.strftime("%d-%m-%Y")
+        
+        # Rename 'Prediction' to 'Price' for mean view
+        if not selected_province:
+            df_for_table = df_for_table.rename(columns={"Prediction": "Price"})
+        
+        # Convert numeric columns to int
+        if "Price" in df_for_table.columns:
+            df_for_table["Price"] = df_for_table["Price"].astype(int)
+        if "Prediction" in df_for_table.columns:
+            df_for_table["Prediction"] = df_for_table["Prediction"].astype(int)
+
+        # Prepare forecast table HTML
+        forecast_table_html = df_for_table.to_html(
+            classes="min-w-full divide-y divide-gray-200", border=0, index=False
+        )
+        forecast_table_html = forecast_table_html.replace(
+            "<th>",
+            '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">',
+        )
+        forecast_table_html = forecast_table_html.replace(
+            "<td>", '<td class="px-6 py-4 whitespace-nowrap text-left">'
+        )
+
+        return JsonResponse({"forecast_table": forecast_table_html})
+
+    except Exception as e:
+        return JsonResponse(
+            {"error": f"Failed to generate prediction table: {str(e)}"}, status=500
+        )

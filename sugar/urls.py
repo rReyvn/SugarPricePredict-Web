@@ -32,6 +32,7 @@ urlpatterns = [
     # RFR Model URLs
     path('train/', rfr_views.start_training_view, name='start_training'),
     path('results/', rfr_views.prediction_results_view, name='prediction_results'),
+    path('prediction_table/', rfr_views.prediction_table_view, name='prediction_table'),
 ]
 
 if settings.DEBUG:
