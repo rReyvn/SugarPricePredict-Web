@@ -172,52 +172,27 @@
         <div id="results-container" class="mt-8">
             <!-- Training results will be loaded here -->
         </div>
-        <div class="p-6 bg-white rounded-2xl shadow-md mt-8">
-            <h2 class="text-xl font-semibold mb-4">Forecast Filters</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label for="province-select" class="block text-sm font-medium text-gray-700">Province:</label>
-                    <select id="province-select"
-                            name="province"
-                            class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                        <option value="">All Provinces</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="horizon-select" class="block text-sm font-medium text-gray-700">Forecast End Date:</label>
-                    <input type="date"
-                           id="horizon-select"
-                           name="horizon"
-                           class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                </div>
-            </div>
-        </div>
+
     </div>
     <script>
     document.addEventListener('DOMContentLoaded', function () {
         const trainButton = document.getElementById('train-all-btn');
         const statusContainer = document.getElementById('training-status-container');
         const resultsContainer = document.getElementById('results-container');
-        const provinceSelect = document.getElementById('province-select');
-        const horizonSelect = document.getElementById('horizon-select');
+        
+        // State variables to hold the current filter values
+        let currentProvince = "";
+        let currentHorizon = "";
 
-        // Set default forecast end date to 30 days from now
+        // Initialize the default horizon date
         const today = new Date();
         const defaultHorizonDate = new Date(today);
         defaultHorizonDate.setDate(today.getDate() + 30);
-
         const year = defaultHorizonDate.getFullYear();
         const month = (defaultHorizonDate.getMonth() + 1).toString().padStart(2, '0');
         const day = defaultHorizonDate.getDate().toString().padStart(2, '0');
-        horizonSelect.value = `${year}-${month}-${day}`;
+        currentHorizon = `${year}-${month}-${day}`;
 
-    
-        // Fetch initial results on page load
-        fetchResults();
-        
-        // Event listeners for dropdowns
-        provinceSelect.addEventListener('change', fetchResults);
-        horizonSelect.addEventListener('change', fetchResults);
 
         trainButton.addEventListener('click', function () {
             // Show a simple loading indicator
@@ -242,35 +217,29 @@
             })
             .then(response => response.json())
             .then(data => {
-                // The task runs in the background. We don't poll.
-                // We can just show a message and maybe reload the page after a delay.
                 alert('Model training has started in the background. The "Last trained" date will update upon completion, and you can reload the page to see new results.');
-                // Re-enable button after a short delay
                 setTimeout(() => {
                     location.reload();
-                }, 5000); // Reload page after 5 seconds to check for new timestamp.
+                }, 5000);
             })
             .catch(error => {
                 console.error('Error starting training:', error);
                 alert('Failed to start training. Check the console for errors.');
                 trainButton.disabled = false;
-                statusContainer.innerHTML = ''; // Clear indicator
+                statusContainer.innerHTML = '';
                 statusContainer.appendChild(trainButton);
             });
         });
     
-        function fetchResults() {
+        function fetchAndRenderResults() {
             resultsContainer.innerHTML = '<p class="text-center">Loading results...</p>';
 
-            const selectedProvince = provinceSelect.value;
-            const selectedHorizonDateString = horizonSelect.value;
-
             let horizonInDays = null;
-            if (selectedHorizonDateString) {
+            if (currentHorizon) {
                 const today = new Date();
-                today.setHours(0, 0, 0, 0); // Normalize 'today' to start of day
-                const selectedDate = new Date(selectedHorizonDateString);
-                selectedDate.setHours(0, 0, 0, 0); // Normalize selected date to start of day
+                today.setHours(0, 0, 0, 0);
+                const selectedDate = new Date(currentHorizon);
+                selectedDate.setHours(0, 0, 0, 0);
 
                 const diffTime = Math.abs(selectedDate.getTime() - today.getTime());
                 horizonInDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -278,8 +247,8 @@
 
             let url = "{% url 'prediction_results' %}";
             const params = new URLSearchParams();
-            if (selectedProvince) {
-                params.append('province', selectedProvince);
+            if (currentProvince) {
+                params.append('province', currentProvince);
             }
             if (horizonInDays !== null) {
                 params.append('horizon', horizonInDays);
@@ -291,41 +260,28 @@
             fetch(url)
                 .then(response => {
                     if (!response.ok) {
-                        return response.json().then(err => { throw new Error(err.error) });
+                        return response.json().then(err => { throw new Error(err.error || 'An unknown error occurred') });
                     }
                     return response.json();
                 })
                 .then(data => {
-                    // Populate province dropdown
-                    if (data.provinces && provinceSelect.options.length <= 1) { // Only populate once if not already
-                        data.provinces.forEach(province => {
-                            const option = document.createElement('option');
-                            option.value = province;
-                            option.textContent = province;
-                            provinceSelect.appendChild(option);
-                        });
-                    }
-                    // Set selected values
-                    if (data.selected_province) {
-                        provinceSelect.value = data.selected_province;
-                    } else {
-                        provinceSelect.value = ""; // "All Provinces"
-                    }
-                    // The backend might return the horizon in days, but the date picker needs a date string.
-                    // We need to re-calculate the date string from the horizon in days if the backend sends it back.
-                    // For simplicity, we'll leave the date picker as is after initial setting,
-                    // as the user explicitly chose a date.
-                    // If the backend sends back `selected_horizon_date` as a date string, use that.
-                    if (data.selected_horizon_date) {
-                        horizonSelect.value = data.selected_horizon_date;
-                    } else {
-                        // If backend doesn't send a date string, ensure the date picker retains its value
-                    }
-
-
                     resultsContainer.innerHTML = `
                         <div class="p-6 bg-white rounded-2xl shadow-md">
-                            <h2 class="text-xl font-semibold mb-4">Prediction Results</h2>
+                            <div class="flex flex-wrap justify-between items-center mb-4 gap-4">
+                                <h2 class="text-xl font-semibold">Prediction Results</h2>
+                                <div class="flex items-center gap-4">
+                                    <div class="w-48">
+                                        <label for="province-select" class="block text-sm font-medium text-gray-700 sr-only">Province</label>
+                                        <select id="province-select" name="province" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                                            <option value="">All Provinces</option>
+                                        </select>
+                                    </div>
+                                    <div class="w-48">
+                                        <label for="horizon-select" class="block text-sm font-medium text-gray-700 sr-only">Forecast End Date</label>
+                                        <input type="date" id="horizon-select" name="horizon" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                                    </div>
+                                </div>
+                            </div>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div class="md:col-span-2">
                                     <h3 class="text-lg font-semibold mb-2">Historical and Forecasted Prices</h3>
@@ -342,6 +298,38 @@
                             </div>
                         </div>
                     `;
+
+                    // Now that the elements are in the DOM, find them
+                    const provinceSelect = document.getElementById('province-select');
+                    const horizonSelect = document.getElementById('horizon-select');
+
+                    // Populate province dropdown
+                    if (data.provinces) {
+                        data.provinces.forEach(province => {
+                            const option = document.createElement('option');
+                            option.value = province;
+                            option.textContent = province;
+                            provinceSelect.appendChild(option);
+                        });
+                    }
+                    
+                    // Set the current values to the inputs
+                    provinceSelect.value = data.selected_province || currentProvince;
+                    horizonSelect.value = data.selected_horizon_date || currentHorizon;
+
+                    // Update state from backend just in case
+                    currentProvince = provinceSelect.value;
+                    currentHorizon = horizonSelect.value;
+
+                    // Attach event listeners
+                    provinceSelect.addEventListener('change', (e) => {
+                        currentProvince = e.target.value;
+                        fetchAndRenderResults();
+                    });
+                    horizonSelect.addEventListener('change', (e) => {
+                        currentHorizon = e.target.value;
+                        fetchAndRenderResults();
+                    });
                 })
                 .catch(error => {
                     resultsContainer.innerHTML = `
@@ -354,6 +342,9 @@
                     console.warn('Could not fetch results:', error.message);
                 });
         }
+
+        // Initial load
+        fetchAndRenderResults();
     });
     </script>
 {% endblock content %}
