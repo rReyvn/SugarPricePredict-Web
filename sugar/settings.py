@@ -119,7 +119,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "Asia/Jakarta"
 
 USE_I18N = True
 
@@ -133,11 +133,11 @@ STATIC_URL = "static/"
 
 # Django Q Configuration
 Q_CLUSTER = {
-    'name': 'sugar',
-    'workers': 4,
-    'timeout': 90,
-    'retry': 120,
-    'queue_limit': 50,
-    'bulk': 10,
-    'orm': 'default',  # Use Django's ORM to manage the queue
+    "name": "sugar",
+    "workers": 4,
+    "timeout": 90,
+    "retry": 120,
+    "queue_limit": 50,
+    "bulk": 10,
+    "orm": "default",  # Use Django's ORM to manage the queue
 }
