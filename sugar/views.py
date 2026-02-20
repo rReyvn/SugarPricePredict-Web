@@ -1,10 +1,12 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
 from django.core.paginator import Paginator
 from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponse, Http404
 from datetime import datetime
 import os
+from .models import UploadedFile
+from rfr_model.pipeline import LAST_TRAINING_TIMESTAMP_PATH
 
 
 def home(request):
@@ -30,82 +32,19 @@ def logout_view(request):
     return redirect("login")
 
 
-from rfr_model.pipeline import LAST_TRAINING_TIMESTAMP_PATH
-
-
 def dashboard_view(request):
     if not request.user.is_authenticated:
         return redirect("login")
 
-    upload_dir = os.path.join(settings.BASE_DIR, "rfr_model", "datasets")
-    if not os.path.exists(upload_dir):
-        os.makedirs(upload_dir)
-
     if request.method == "POST" and "excel_file" in request.FILES:
         file = request.FILES["excel_file"]
-        file_path = os.path.join(upload_dir, file.name)
-        with open(file_path, "wb+") as destination:
-            for chunk in file.chunks():
-                destination.write(chunk)
-
-        try:
-            import pandas as pd
-
-            df = pd.read_excel(file_path)
-
-            dates = []
-            for col in df.columns:
-                try:
-                    dates.append(pd.to_datetime(col, format="%d/ %m/ %Y"))
-                except (ValueError, TypeError):
-                    continue
-
-            if dates:
-                start_date = min(dates).strftime("%Y-%m-%d")
-                end_date = max(dates).strftime("%Y-%m-%d")
-
-                _, file_extension = os.path.splitext(file.name)
-                new_filename = f"{start_date}_{end_date}{file_extension}"
-                new_file_path = os.path.join(upload_dir, new_filename)
-
-                os.rename(file_path, new_file_path)
-                print(f"File successfully renamed to {new_filename}")
-            else:
-                print("No dates found in the column headers of the uploaded file.")
-
-        except Exception as e:
-            print(f"An error occurred during file processing: {e}")
-            pass
-
+        # The save method of the model will handle the processing
+        UploadedFile.objects.create(file=file)
         return redirect("dashboard")
 
-    uploaded_files = []
-    with os.scandir(upload_dir) as entries:
-        for entry in entries:
-            if entry.is_file():
-                stat = entry.stat()
-                start_date, end_date = None, None
-                try:
-                    filename_without_ext, _ = os.path.splitext(entry.name)
-                    start_date_str, end_date_str = filename_without_ext.split("_")
-                    start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
-                    end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
-                except (ValueError, IndexError):
-                    pass
+    uploaded_files_list = UploadedFile.objects.all().order_by("-upload_date")
 
-                uploaded_files.append(
-                    {
-                        "name": entry.name,
-                        "upload_date": datetime.fromtimestamp(stat.st_mtime),
-                        "start_date": start_date,
-                        "end_date": end_date,
-                    }
-                )
-
-    # Sort files by upload date, newest first
-    uploaded_files.sort(key=lambda x: x["upload_date"], reverse=True)
-
-    paginator = Paginator(uploaded_files, 5)
+    paginator = Paginator(uploaded_files_list, 5)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
@@ -126,9 +65,9 @@ def dashboard_view(request):
     return render(request, "dashboard.html", context)
 
 
-def download_file(filename):
-    upload_dir = os.path.join(settings.BASE_DIR, "rfr_model", "datasets")
-    file_path = os.path.join(upload_dir, filename)
+def download_file(request, file_id):
+    uploaded_file = get_object_or_404(UploadedFile, pk=file_id)
+    file_path = uploaded_file.file.path
 
     if os.path.exists(file_path):
         with open(file_path, "rb") as fh:
@@ -143,11 +82,7 @@ def download_file(filename):
     raise Http404
 
 
-def delete_file(filename):
-    upload_dir = os.path.join(settings.BASE_DIR, "rfr_model", "datasets")
-    file_path = os.path.join(upload_dir, filename)
-
-    if os.path.exists(file_path):
-        os.remove(file_path)
-
+def delete_file(request, file_id):
+    uploaded_file = get_object_or_404(UploadedFile, pk=file_id)
+    uploaded_file.delete()
     return redirect("dashboard")

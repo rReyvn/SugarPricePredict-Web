@@ -82,7 +82,7 @@
                                 <td class="px-6 py-4 whitespace-nowrap">{{ file.upload_date|date:"d-m-y" }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex items-center justify-center space-x-4">
-                                        <a href="{% url 'download_file' filename=file.name %}"
+                                        <a href="{% url 'download_file' file_id=file.id %}"
                                            title="Download file"
                                            class="flex items-center justify-center rounded-full p-2 text-indigo-600 hover:bg-indigo-100">
                                             {% include "icons/download.svg" %}
@@ -90,6 +90,7 @@
                                         <button type="button"
                                                 title="Delete file"
                                                 class="delete-file-btn flex items-center justify-center rounded-full p-2 text-red-600 hover:bg-red-100"
+                                                data-fileid="{{ file.id }}"
                                                 data-filename="{{ file.name }}">
                                             {% include "icons/trash.svg" %}
                                         </button>
@@ -548,11 +549,11 @@
         const deleteFilenameSpan = document.getElementById('delete-filename');
         const deleteModalOverlay = deleteConfirmationModal.querySelector('.fixed.inset-0.bg-gray-500');
 
-        let fileToDelete = null; // Variable to store the name of the file to be deleted
+        let fileIdToDelete = null; // Variable to store the id of the file to be deleted
 
         // Function to open the delete modal
-        function openDeleteModal(filename) {
-            fileToDelete = filename;
+        function openDeleteModal(fileId, filename) {
+            fileIdToDelete = fileId;
             deleteFilenameSpan.textContent = filename;
             deleteConfirmationModal.classList.remove('hidden');
         }
@@ -560,24 +561,25 @@
         // Function to close the delete modal
         function closeDeleteModal() {
             deleteConfirmationModal.classList.add('hidden');
-            fileToDelete = null;
+            fileIdToDelete = null;
         }
 
         // Attach event listeners to all delete buttons
         document.querySelectorAll('.delete-file-btn').forEach(button => {
             button.addEventListener('click', function () {
+                const fileId = this.dataset.fileid;
                 const filename = this.dataset.filename;
-                openDeleteModal(filename);
+                openDeleteModal(fileId, filename);
             });
         });
 
         // Event listener for confirming deletion
         confirmDeleteBtn.addEventListener('click', function () {
-            if (fileToDelete) {
+            if (fileIdToDelete) {
                 // Create a form dynamically to submit the delete request
                 const form = document.createElement('form');
                 form.method = 'POST';
-                form.action = `/delete/${fileToDelete}/`; // Construct the URL
+                form.action = `/delete/${fileIdToDelete}/`; // Construct the URL
                 
                 // Add CSRF token
                 const csrfInput = document.createElement('input');

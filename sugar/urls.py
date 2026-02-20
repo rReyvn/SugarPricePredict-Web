@@ -10,8 +10,8 @@ urlpatterns = [
     path("login/", views.login_view, name="login"),
     path("dashboard/", views.dashboard_view, name="dashboard"),
     path("logout/", views.logout_view, name="logout"),
-    path("download/<path:filename>/", views.download_file, name="download_file"),
-    path("delete/<path:filename>/", views.delete_file, name="delete_file"),
+    path("download/<int:file_id>/", views.download_file, name="download_file"),
+    path("delete/<int:file_id>/", views.delete_file, name="delete_file"),
     # RFR Model URLs
     path("train/", rfr_views.start_training_view, name="start_training"),
     path("results/", rfr_views.prediction_results_view, name="prediction_results"),
