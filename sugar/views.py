@@ -37,7 +37,7 @@ def dashboard_view(request):
     if not request.user.is_authenticated:  #
         return redirect("login")
 
-    upload_dir = os.path.join(settings.BASE_DIR, "datasets")
+    upload_dir = os.path.join(settings.BASE_DIR, "rfr_model", "datasets")
     if not os.path.exists(upload_dir):
         os.makedirs(upload_dir)
 
@@ -130,7 +130,7 @@ def dashboard_view(request):
 
 
 def download_file(request, filename):
-    upload_dir = os.path.join(settings.BASE_DIR, "datasets")
+    upload_dir = os.path.join(settings.BASE_DIR, "rfr_model", "datasets")
     file_path = os.path.join(upload_dir, filename)
 
     if os.path.exists(file_path):
@@ -147,7 +147,7 @@ def download_file(request, filename):
 
 
 def delete_file(request, filename):
-    upload_dir = os.path.join(settings.BASE_DIR, "datasets")
+    upload_dir = os.path.join(settings.BASE_DIR, "rfr_model", "datasets")
     file_path = os.path.join(upload_dir, filename)
 
     if os.path.exists(file_path):

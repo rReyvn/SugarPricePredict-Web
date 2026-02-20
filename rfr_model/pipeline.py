@@ -10,7 +10,7 @@ import os
 from django.conf import settings
 
 # Define paths for model artifacts
-MODEL_DIR = os.path.join(settings.BASE_DIR, "rfr", "output", "model")
+MODEL_DIR = os.path.join(settings.BASE_DIR, "rfr_model", "output", "model")
 os.makedirs(MODEL_DIR, exist_ok=True)
 MODEL_PATH = os.path.join(MODEL_DIR, "rfr_model.joblib")
 PROVINCE_MAP_PATH = os.path.join(MODEL_DIR, "province_mapping.joblib")

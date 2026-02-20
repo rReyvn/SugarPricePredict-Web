@@ -30,7 +30,7 @@ def train_on_all_datasets_task():
     """
     try:
         print("Starting model training on all datasets...")
-        upload_dir = os.path.join(settings.BASE_DIR, "datasets")
+        upload_dir = os.path.join(settings.BASE_DIR, "rfr_model", "datasets")
 
         all_files = [
             os.path.join(upload_dir, f)

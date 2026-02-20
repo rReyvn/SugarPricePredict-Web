@@ -1,13 +1,12 @@
+rfr_model/output/
+rfr_model/datasets/
+theme/static/css/dist/
+__pycache__/
 *.log
 *.pot
 *.pyc
-__pycache__/
 local_settings.py
 db.sqlite3
-datasets/
-/3
-rfr/output/
-theme/static/css/dist/
 .venv
 node_modules/
 npm-debug.log
