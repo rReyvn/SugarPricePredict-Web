@@ -10,16 +10,14 @@ import pandas as pd
 import joblib
 import io
 import base64
+from django.db import transaction
+from .models import TrainingLock
 from .pipeline import (
     EVAL_PLOT_PATH,
-    FORECAST_RESULTS_PATH,
-    COMBINED_PLOT_PATH,  # Added
-    EVALUATION_METRICS_PATH,  # Added
-    MODEL_PATH,  # Added
-    PROVINCE_MAP_PATH,  # Added
-    forecast_future_data,  # Added
-    plot_combined_forecast,  # Added
-    DF_TRANSFORMED_PATH,  # Added
+    EVALUATION_METRICS_PATH,
+    DF_TRANSFORMED_PATH,
+    CACHED_PREDICTIONS_PATH,
+    plot_combined_forecast,
 )
 
 
@@ -27,52 +25,56 @@ from .pipeline import (
 @require_POST
 def start_training_view(request):
     """
-    Starts the model training task, ensuring only one runs at a time.
+    Starts the model training task, ensuring only one runs at a time
+    using a database lock.
     """
-    task_name = "rfr_model.q_tasks.train_on_all_datasets_task"
-    
-    # Check for existing running or queued tasks. A task is considered "in-progress" 
-    # if it has been created but does not have a success=True/False flag yet.
-    in_progress_tasks = Task.objects.filter(func=task_name, success__isnull=True).count()
-
-    if in_progress_tasks > 0:
-        return JsonResponse(
-            {"error": "A training task is already in progress. Please wait for it to complete."},
-            status=409,  # 409 Conflict
-        )
-
     try:
-        # The task now finds all datasets by itself.
-        async_task(task_name, timeout=300)
+        with transaction.atomic():
+            # Get or create the lock object and lock it.
+            lock, created = TrainingLock.objects.select_for_update().get_or_create(pk=1)
+
+            if lock.is_locked:
+                return JsonResponse(
+                    {"error": "A training task is already in progress. Please wait for it to complete."},
+                    status=409,  # 409 Conflict
+                )
+
+            # Check for tasks that might have failed without releasing the lock
+            task_name = "rfr_model.q_tasks.train_on_all_datasets_task"
+            in_progress_tasks = Task.objects.filter(func=task_name, success__isnull=True).count()
+            if in_progress_tasks > 0:
+                return JsonResponse(
+                    {"error": "A training task is already in progress (according to Django Q). Please wait for it to complete."},
+                    status=409,
+                )
+
+            # Acquire lock and start the task
+            lock.is_locked = True
+            lock.save()
+            async_task(task_name, hook='rfr_model.hooks.training_complete_hook', timeout=300)
+
         return JsonResponse(
             {"message": "Model training started in the background."}, status=202
         )
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+        # This will catch exceptions from the transaction or task creation
+        return JsonResponse({"error": f"Failed to start training: {str(e)}"}, status=500)
+
 
 
 def prediction_results_view(request):
     """
     Loads the pre-computed forecast and evaluation plot and returns them.
-    Can also generate forecast based on selected province and horizon.
+    Can also generate forecast based on selected province.
     """
-    selected_province = request.GET.get("province")
-    horizon_str = request.GET.get("horizon", "180")  # Default to 180 days
-
-    try:
-        horizon = int(horizon_str)
-        if not (1 <= horizon <= 180):
-            raise ValueError("Horizon must be between 1 and 180.")
-    except ValueError as e:
-        return JsonResponse({"error": f"Invalid horizon value: {e}"}, status=400)
+    selected_province = request.GET.get("province") or "All"
 
     # Required files for initial load and evaluation metrics
     required_files_base = [
         EVAL_PLOT_PATH,
         EVALUATION_METRICS_PATH,
-        MODEL_PATH,
-        PROVINCE_MAP_PATH,
-        DF_TRANSFORMED_PATH,  # Now required
+        DF_TRANSFORMED_PATH,
+        CACHED_PREDICTIONS_PATH,
     ]
 
     # Check for existence of all base required files
@@ -87,12 +89,9 @@ def prediction_results_view(request):
 
     try:
         # Load necessary artifacts
-        model = joblib.load(MODEL_PATH)
-        province_mapping = joblib.load(PROVINCE_MAP_PATH)
         evaluation_metrics = joblib.load(EVALUATION_METRICS_PATH)
-        df_transformed = joblib.load(
-            DF_TRANSFORMED_PATH
-        )  # Load the stored df_transformed
+        df_transformed = joblib.load(DF_TRANSFORMED_PATH)
+        cached_predictions = joblib.load(CACHED_PREDICTIONS_PATH)
 
         # Determine prediction start date (day after the last date in the historical data)
         prediction_start_date = df_transformed["Date"].max() + pd.Timedelta(days=1)
@@ -101,88 +100,26 @@ def prediction_results_view(request):
         all_provinces = sorted(df_transformed["Province"].unique().tolist())
 
         # Validate selected_province
-        if selected_province and selected_province not in all_provinces:
+        if selected_province not in all_provinces and selected_province != "All":
             return JsonResponse(
                 {"error": f"Province '{selected_province}' not found."}, status=400
             )
 
-        # Generate forecast data dynamically based on selection
-        # forecast_future_data will always generate for all provinces, then we filter/aggregate
-        forecast_df_full = forecast_future_data(
-            df_transformed,
-            province_mapping,
-            model,
-            horizon=horizon,  # Pass the horizon to forecast_future_data
-        )
+        # Get data from cache
+        province_data = cached_predictions[selected_province]
+        df_historical_for_plot = province_data["historical"]
+        df_predicted_for_plot = province_data["predicted"]
 
-        df_for_table = None
-        df_historical_for_plot = None
-        df_predicted_for_plot = None
-        plot_title = "Forecasted Sugar Prices"
+        df_for_table = df_predicted_for_plot.copy()
+        df_for_table["Prediction"] = df_for_table["Prediction"].round(0)
 
-        if selected_province:
-            # Filter for specific province
-            df_for_table = forecast_df_full[
-                forecast_df_full["Province"] == selected_province
-            ].copy()
-            df_for_table = df_for_table[
-                df_for_table["Date"]
-                <= (df_for_table["Date"].min() + pd.Timedelta(days=horizon - 1))
-            ].copy()
-            df_for_table["Prediction"] = df_for_table["Prediction"].round(0)
-
-            df_historical_for_plot = df_transformed[
-                df_transformed["Province"] == selected_province
-            ].copy()
-            df_predicted_for_plot = forecast_df_full[
-                forecast_df_full["Province"] == selected_province
-            ].copy()
-            df_predicted_for_plot = df_predicted_for_plot[
-                df_predicted_for_plot["Date"]
-                <= (
-                    df_predicted_for_plot["Date"].min() + pd.Timedelta(days=horizon - 1)
-                )
-            ].copy()
-
+        if selected_province == "All":
+            plot_title = "Forecasted Sugar Prices (Mean of All Provinces)"
+        else:
             plot_title = f"Forecasted Sugar Prices ({selected_province})"
 
-        else:  # "All Provinces" selected - Calculate mean
-            # Mean for table (forecast only)
-            df_for_table = (
-                forecast_df_full.groupby("Date")["Prediction"].mean().reset_index()
-            )
-            df_for_table["Province"] = (
-                "All"  # Add Province column for consistent display
-            )
-            df_for_table = df_for_table[
-                df_for_table["Date"]
-                <= (df_for_table["Date"].min() + pd.Timedelta(days=horizon - 1))
-            ].copy()
-            df_for_table["Prediction"] = df_for_table["Prediction"].round(0)
-
-            # Mean historical for plot
-            df_historical_for_plot = (
-                df_transformed.groupby("Date")["Price"].mean().reset_index()
-            )
-            df_historical_for_plot["Province"] = "Mean"
-
-            # Mean predicted for plot
-            df_predicted_for_plot = (
-                forecast_df_full.groupby("Date")["Prediction"].mean().reset_index()
-            )
-            df_predicted_for_plot["Province"] = "Mean"
-            df_predicted_for_plot = df_predicted_for_plot[
-                df_predicted_for_plot["Date"]
-                <= (
-                    df_predicted_for_plot["Date"].min() + pd.Timedelta(days=horizon - 1)
-                )
-            ].copy()
-
-            plot_title = "Forecasted Sugar Prices (Mean of All Provinces)"
-
         # Format 'Date' column for table
-        # Rename 'Prediction' to 'Price' for table display consistency if showing mean forecast
-        if not selected_province:
+        if selected_province == "All":
             df_for_table = df_for_table.rename(columns={"Prediction": "Price"})
 
         # Convert the price column to int to remove .0 decimals
@@ -235,7 +172,6 @@ def prediction_results_view(request):
                 "combined_plot_data": plotly_combined_plot_data,  # New Plotly JSON data
                 "provinces": all_provinces,  # List of provinces for frontend dropdown
                 "selected_province": selected_province,
-                "selected_horizon": horizon,
                 "prediction_start_date": prediction_start_date.strftime("%Y-%m-%d"),
             }
         )
@@ -247,22 +183,13 @@ def prediction_results_view(request):
 def prediction_table_view(request):
     """
     Generates and returns only the prediction table HTML based on
-    the selected province and horizon.
+    the selected province.
     """
-    selected_province = request.GET.get("province")
-    horizon_str = request.GET.get("horizon", "180")  # Default to 180 days
-
-    try:
-        horizon = int(horizon_str)
-        if not (1 <= horizon <= 180):
-            raise ValueError("Horizon must be between 1 and 180.")
-    except ValueError as e:
-        return JsonResponse({"error": f"Invalid horizon value: {e}"}, status=400)
+    selected_province = request.GET.get("province") or "All"
 
     # Required files for generating the table
     required_files_for_table = [
-        MODEL_PATH,
-        PROVINCE_MAP_PATH,
+        CACHED_PREDICTIONS_PATH,
         DF_TRANSFORMED_PATH,
     ]
 
@@ -277,46 +204,27 @@ def prediction_table_view(request):
 
     try:
         # Load necessary artifacts
-        model = joblib.load(MODEL_PATH)
-        province_mapping = joblib.load(PROVINCE_MAP_PATH)
+        cached_predictions = joblib.load(CACHED_PREDICTIONS_PATH)
         df_transformed = joblib.load(DF_TRANSFORMED_PATH)
 
         # Get list of all provinces for validation
         all_provinces = sorted(df_transformed["Province"].unique().tolist())
-        if selected_province and selected_province not in all_provinces:
+        if selected_province not in all_provinces and selected_province != "All":
             return JsonResponse(
                 {"error": f"Province '{selected_province}' not found."}, status=400
             )
 
-        # Generate forecast data dynamically
-        forecast_df_full = forecast_future_data(
-            df_transformed, province_mapping, model, horizon=horizon
-        )
+        # Get data from cache
+        province_data = cached_predictions[selected_province]
+        df_for_table = province_data["predicted"].copy()
 
-        df_for_table = None
-        if selected_province:
-            # Filter for specific province
-            df_for_table = forecast_df_full[
-                forecast_df_full["Province"] == selected_province
-            ].copy()
-        else:
-            # "All Provinces" - Calculate mean
-            df_for_table = (
-                forecast_df_full.groupby("Date")["Prediction"].mean().reset_index()
-            )
-            df_for_table["Province"] = "All"
-
-        # Trim to the exact horizon length
-        df_for_table = df_for_table[
-            df_for_table["Date"] <= (df_for_table["Date"].min() + pd.Timedelta(days=horizon - 1))
-        ].copy()
 
         # Round and format for display
         df_for_table["Prediction"] = df_for_table["Prediction"].round(0)
         df_for_table["Date"] = df_for_table["Date"].dt.strftime("%d-%m-%Y")
         
         # Rename 'Prediction' to 'Price' for mean view
-        if not selected_province:
+        if selected_province == "All":
             df_for_table = df_for_table.rename(columns={"Prediction": "Price"})
         
         # Convert numeric columns to int

@@ -395,10 +395,6 @@
                                             <option value="">All Provinces</option>
                                         </select>
                                     </div>
-                                    <div class="w-48">
-                                        <label for="horizon-select" class="block text-sm font-medium text-gray-700 sr-only">Forecast End Date</label>
-                                        <input type="date" id="horizon-select" name="horizon" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                                    </div>
                                     <button id="apply-filters-btn" title="Apply Filters" class="flex items-center justify-center rounded-full bg-indigo-600 p-2 text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">{% include "icons/refresh.svg" %}</button>
                                 </div>
                             </div>
@@ -446,7 +442,6 @@
 
                     // Now that the elements are in the DOM, find them
                     const provinceSelect = document.getElementById('province-select');
-                    const horizonSelect = document.getElementById('horizon-select');
                     const applyFiltersBtn = document.getElementById('apply-filters-btn');
                     
                     const plotTabBtn = document.getElementById('plot-tab-btn');
@@ -455,29 +450,6 @@
                     const tableContainer = document.getElementById('table-container');
                     let tableHasBeenLoaded = false;
 
-
-                    // Set min/max date on the date picker based on when predictions can start
-                    if (data.prediction_start_date) {
-                        const minDateStr = data.prediction_start_date;
-                        
-                        const maxDate = new Date(minDateStr);
-                        maxDate.setUTCDate(maxDate.getUTCDate() + 179); // 180 days total range
-
-                        const maxYear = maxDate.getUTCFullYear();
-                        const maxMonth = (maxDate.getUTCMonth() + 1).toString().padStart(2, '0');
-                        const maxDay = maxDate.getUTCDate().toString().padStart(2, '0');
-                        const maxDateStr = `${maxYear}-${maxMonth}-${maxDay}`;
-
-                        horizonSelect.min = minDateStr;
-                        horizonSelect.max = maxDateStr;
-
-                        // Adjust current value if it's outside the new bounds
-                        if (horizonSelect.value < minDateStr) {
-                            horizonSelect.value = minDateStr;
-                        } else if (horizonSelect.value > maxDateStr) {
-                            horizonSelect.value = maxDateStr;
-                        }
-                    }
 
                     const combinedPlotDiv = document.getElementById('combined-plot-div');
                     if (data.combined_plot_data && combinedPlotDiv) {
@@ -496,16 +468,13 @@
                     
                     // Set the current values to the inputs
                     provinceSelect.value = data.selected_province || currentProvince;
-                    horizonSelect.value = data.selected_horizon_date || currentHorizon;
 
                     // Update state from backend just in case
                     currentProvince = provinceSelect.value;
-                    currentHorizon = horizonSelect.value;
 
                     // Attach event listeners
                     applyFiltersBtn.addEventListener('click', () => {
                         currentProvince = provinceSelect.value;
-                        currentHorizon = horizonSelect.value;
                         fetchAndRenderResults();
                         tableHasBeenLoaded = false;
                     });
@@ -563,23 +532,10 @@
                 </div>
             `;
 
-            let horizonInDays = null;
-            if (currentHorizon) {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const selectedDate = new Date(currentHorizon);
-                selectedDate.setHours(0, 0, 0, 0);
-                const diffTime = Math.abs(selectedDate.getTime() - today.getTime());
-                horizonInDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            }
-
             let url = "{% url 'prediction_table' %}";
             const params = new URLSearchParams();
             if (currentProvince) {
                 params.append('province', currentProvince);
-            }
-            if (horizonInDays !== null) {
-                params.append('horizon', horizonInDays);
             }
             if (params.toString()) {
                 url += `?${params.toString()}`;

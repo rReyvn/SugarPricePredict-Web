@@ -20,6 +20,7 @@ FORECAST_RESULTS_PATH = os.path.join(MODEL_DIR, "forecast_results.joblib")
 COMBINED_PLOT_PATH = os.path.join(MODEL_DIR, "combined_forecast_plot.png")
 EVALUATION_METRICS_PATH = os.path.join(MODEL_DIR, "evaluation_metrics.joblib")
 DF_TRANSFORMED_PATH = os.path.join(MODEL_DIR, "df_transformed.joblib")
+CACHED_PREDICTIONS_PATH = os.path.join(MODEL_DIR, "cached_predictions.joblib")
 
 
 def load_and_prepare_df(file_path):

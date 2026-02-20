@@ -4,15 +4,7 @@ import joblib
 from django.conf import settings
 from datetime import datetime
 from django.utils import timezone
-from .pipeline import (
-    clean_data,
-    transform_data,
-    train_model,
-    merge_data,
-    load_and_prepare_df,
-)
-
-
+from .models import TrainingLock
 from .pipeline import (
     clean_data,
     transform_data,
@@ -20,7 +12,6 @@ from .pipeline import (
     merge_data,
     load_and_prepare_df,
     forecast_future_data,
-    plot_combined_forecast,
     MODEL_PATH,
     PROVINCE_MAP_PATH,
     EVAL_PLOT_PATH,
@@ -28,6 +19,7 @@ from .pipeline import (
     FORECAST_RESULTS_PATH,
     EVALUATION_METRICS_PATH,
     DF_TRANSFORMED_PATH,
+    CACHED_PREDICTIONS_PATH,
 )
 
 
@@ -82,13 +74,36 @@ def train_on_all_datasets_task():
         print("Generating forecast...")
         forecast_df = forecast_future_data(df_transformed, province_mapping, model)
 
+        # Generate and cache predictions for each province
+        print("Generating and caching predictions for each province...")
+        all_provinces = sorted(df_transformed["Province"].unique().tolist())
+        cached_predictions = {}
+
+        # Individual provinces
+        for province in all_provinces:
+            df_hist = df_transformed[df_transformed["Province"] == province].copy()
+            df_pred = forecast_df[forecast_df["Province"] == province].copy()
+            cached_predictions[province] = {
+                "historical": df_hist,
+                "predicted": df_pred,
+            }
+
+        # Mean of all provinces
+        df_hist_mean = df_transformed.groupby("Date")["Price"].mean().reset_index()
+        df_pred_mean = forecast_df.groupby("Date")["Prediction"].mean().reset_index()
+        cached_predictions["All"] = {
+            "historical": df_hist_mean,
+            "predicted": df_pred_mean,
+        }
+
         # Save artifacts
         print("Saving model and artifacts...")
         joblib.dump(model, MODEL_PATH)
         joblib.dump(province_mapping, PROVINCE_MAP_PATH)
         joblib.dump(forecast_df, FORECAST_RESULTS_PATH)
         joblib.dump(evaluation, EVALUATION_METRICS_PATH)
-        joblib.dump(df_transformed, DF_TRANSFORMED_PATH)  # Added: Save df_transformed
+        joblib.dump(df_transformed, DF_TRANSFORMED_PATH)
+        joblib.dump(cached_predictions, CACHED_PREDICTIONS_PATH)
         plot.savefig(EVAL_PLOT_PATH)
         plot.close()
 
@@ -101,3 +116,8 @@ def train_on_all_datasets_task():
     except Exception as e:
         print(f"An error occurred during model training: {e}")
         raise
+    finally:
+        # Always release the lock
+        lock = TrainingLock.objects.get(pk=1)
+        lock.is_locked = False
+        lock.save()

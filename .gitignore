@@ -1,22 +1,14 @@
-# Django
 *.log
 *.pot
 *.pyc
 __pycache__/
 local_settings.py
 db.sqlite3
-.venv
 datasets/
 /3
 rfr/output/
 theme/static/css/dist/
-
-# Node
+.venv
 node_modules/
 npm-debug.log
-
-# Editor directories and files
-.idea/
 .vscode/
-*.swp
-*.swo
