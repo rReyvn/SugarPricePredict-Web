@@ -13,12 +13,10 @@
             <div id="training-status-container">
                 <button id="train-all-btn"
                         title="Retrain model on all datasets"
-                        class="flex items-center justify-center rounded-full bg-indigo-600 p-2 text-white hover:bg-indigo-700"
+                        class="flex items-center justify-center rounded-full bg-blue-500 p-2 text-white hover:bg-blue-600"
                         data-modal-show="training-confirmation-modal"
                         data-training-url="{% url 'start_training' %}"
-                        data-csrf-token="{{ csrf_token }}">
-                    {% include "icons/refresh.svg" %}
-                </button>
+                        data-csrf-token="{{ csrf_token }}">{% include "icons/refresh.svg" %}</button>
             </div>
             <form action="{% url 'dashboard' %}"
                   method="post"
@@ -82,9 +80,7 @@
                                         class="delete-file-btn flex items-center justify-center rounded-full p-2 text-red-600 hover:bg-red-100"
                                         data-modal-show="delete-confirmation-modal"
                                         data-fileid="{{ file.id }}"
-                                        data-filename="{{ file.name }}">
-                                    {% include "icons/trash.svg" %}
-                                </button>
+                                        data-filename="{{ file.name }}">{% include "icons/trash.svg" %}</button>
                             </div>
                         </td>
                     </tr>
