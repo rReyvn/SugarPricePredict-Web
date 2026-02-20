@@ -25,8 +25,8 @@ def login_view(request):
     return render(request, "login.html", {"error": error})
 
 
-def logout_view(request):  #
-    logout(request)  #
+def logout_view(request):
+    logout(request)
     return redirect("login")
 
 
@@ -34,7 +34,7 @@ from rfr_model.pipeline import LAST_TRAINING_TIMESTAMP_PATH
 
 
 def dashboard_view(request):
-    if not request.user.is_authenticated:  #
+    if not request.user.is_authenticated:
         return redirect("login")
 
     upload_dir = os.path.join(settings.BASE_DIR, "rfr_model", "datasets")
@@ -56,8 +56,6 @@ def dashboard_view(request):
             dates = []
             for col in df.columns:
                 try:
-                    # The user specified the format '%d/ %m/ %y', but the file shows '%d/ %m/ %Y'.
-                    # I will trust the file content.
                     dates.append(pd.to_datetime(col, format="%d/ %m/ %Y"))
                 except (ValueError, TypeError):
                     continue
@@ -76,7 +74,6 @@ def dashboard_view(request):
                 print("No dates found in the column headers of the uploaded file.")
 
         except Exception as e:
-            # log the error and continue with original filename
             print(f"An error occurred during file processing: {e}")
             pass
 
@@ -94,7 +91,7 @@ def dashboard_view(request):
                     start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
                     end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
                 except (ValueError, IndexError):
-                    pass  # Keep start_date and end_date as None if parsing fails
+                    pass
 
                 uploaded_files.append(
                     {
@@ -119,7 +116,7 @@ def dashboard_view(request):
             try:
                 last_trained_timestamp = datetime.fromisoformat(f.read().strip())
             except ValueError:
-                pass  # Ignore if the file is malformed
+                pass
 
     context = {
         "uploaded_files": page_obj,
@@ -129,7 +126,7 @@ def dashboard_view(request):
     return render(request, "dashboard.html", context)
 
 
-def download_file(request, filename):
+def download_file(filename):
     upload_dir = os.path.join(settings.BASE_DIR, "rfr_model", "datasets")
     file_path = os.path.join(upload_dir, filename)
 
@@ -146,7 +143,7 @@ def download_file(request, filename):
     raise Http404
 
 
-def delete_file(request, filename):
+def delete_file(filename):
     upload_dir = os.path.join(settings.BASE_DIR, "rfr_model", "datasets")
     file_path = os.path.join(upload_dir, filename)
 
