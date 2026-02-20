@@ -20,7 +20,8 @@ class UploadedFile(models.Model):
         if is_new_file and self.file and not self.start_date and not self.end_date:
             original_temp_file_path = self.file.path # Path to the initially uploaded file
             try:
-                df = pd.read_excel(original_temp_file_path)
+                with open(original_temp_file_path, 'rb') as f:
+                    df = pd.read_excel(f)
 
                 dates = []
                 for col in df.columns:
@@ -41,14 +42,13 @@ class UploadedFile(models.Model):
                     
                     # --- Start of new logic to handle replacement ---
                     # Check if a file with the new_filename already exists in the database
-                    existing_files_with_same_name = UploadedFile.objects.filter(file__name=new_filename)
+                    existing_files_with_same_name = UploadedFile.objects.filter(file=new_filename)
                     # Important: Ensure we don't try to delete the current instance if it somehow matches
                     # (e.g., if we were updating an existing instance, though current flow creates new ones)
                     if self.pk: # if it's an existing object
                         existing_files_with_same_name = existing_files_with_same_name.exclude(pk=self.pk)
 
                     for existing_file in existing_files_with_same_name:
-                        print(f"Found existing file '{existing_file.name}' with same derived name. Deleting old record and file.")
                         # This deletes both the DB record and the file on disk via the model's delete method
                         existing_file.delete() 
                     # --- End of new logic ---
@@ -66,14 +66,12 @@ class UploadedFile(models.Model):
                     super().save(update_fields=['file', 'start_date', 'end_date'])
 
                 else:
-                    print("No dates found in the column headers of the uploaded file.")
                     # If no dates are found, delete the initially saved temporary file and this model instance
                     if os.path.exists(original_temp_file_path):
                         os.remove(original_temp_file_path)
                     self.delete()
 
             except Exception as e:
-                print(f"An error occurred during file processing: {e}")
                 # Clean up: remove the initially saved temporary file and this model instance
                 if os.path.exists(original_temp_file_path):
                     os.remove(original_temp_file_path)
