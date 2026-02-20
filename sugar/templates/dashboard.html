@@ -253,16 +253,6 @@
         
         // State variables to hold the current filter values
         let currentProvince = "All";
-        let currentHorizon = "";
-
-        // Initialize the default horizon date
-        const today = new Date();
-        const defaultHorizonDate = new Date(today);
-        defaultHorizonDate.setDate(today.getDate() + 30);
-        const year = defaultHorizonDate.getFullYear();
-        const month = (defaultHorizonDate.getMonth() + 1).toString().padStart(2, '0');
-        const day = defaultHorizonDate.getDate().toString().padStart(2, '0');
-        currentHorizon = `${year}-${month}-${day}`;
 
 
         // Modal elements
@@ -353,24 +343,10 @@
                 </div>
             `;
 
-            let horizonInDays = null;
-            if (currentHorizon) {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const selectedDate = new Date(currentHorizon);
-                selectedDate.setHours(0, 0, 0, 0);
-
-                const diffTime = Math.abs(selectedDate.getTime() - today.getTime());
-                horizonInDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            }
-
             let url = "{% url 'prediction_results' %}";
             const params = new URLSearchParams();
             if (currentProvince) {
                 params.append('province', currentProvince);
-            }
-            if (horizonInDays !== null) {
-                params.append('horizon', horizonInDays);
             }
             if (params.toString()) {
                 url += `?${params.toString()}`;

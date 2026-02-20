@@ -249,7 +249,6 @@ def forecast_future_data(
     df_transform: pd.DataFrame,
     province_mapping: dict,
     model: RandomForestRegressor,
-    horizon: int = 180,
     selected_province: str = None,  # Added parameter
 ):
     """
@@ -299,7 +298,7 @@ def forecast_future_data(
 
         prov_id = province_mapping[prov]
 
-        for i in range(1, horizon + 1):
+        for i in range(1, 180 + 1):
             next_date = last_date + pd.Timedelta(days=i)
 
             month = next_date.month
