@@ -252,7 +252,7 @@
         const resultsContainer = document.getElementById('results-container');
         
         // State variables to hold the current filter values
-        let currentProvince = "";
+        let currentProvince = "All";
         let currentHorizon = "";
 
         // Initialize the default horizon date
@@ -392,29 +392,11 @@
                                     <div class="w-48">
                                         <label for="province-select" class="block text-sm font-medium text-gray-700 sr-only">Province</label>
                                         <select id="province-select" name="province" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                                            <option value="">All Provinces</option>
                                         </select>
                                     </div>
-                                    <button id="apply-filters-btn" title="Apply Filters" class="flex items-center justify-center rounded-full bg-indigo-600 p-2 text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">{% include "icons/refresh.svg" %}</button>
                                 </div>
                             </div>
                             <div class="grid grid-cols-1 gap-6">
-                                <div class="p-4">
-                                    <h3 class="text-lg font-semibold mb-4">Model Evaluation</h3>
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                                        <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
-                                            <p class="text-sm font-medium text-gray-500">RMSE</p>
-                                            <p class="mt-1 text-2xl font-semibold text-gray-900">${data.rmse.toFixed(2)}</p>
-                                        </div>
-                                        <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
-                                            <p class="text-sm font-medium text-gray-500">MAPE</p>
-                                            <p class="mt-1 text-2xl font-semibold text-gray-900">${data.mape.toFixed(2)}%</p>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <img src="${data.plot}" alt="Model Evaluation Plot" class="rounded-lg w-full max-w-sm mx-auto" />
-                                    </div>
-                                </div>
                                 <div id="prediction-output-container">
                                         <div class="border-b border-gray-200">
                                             <nav class="-mb-px flex space-x-6" aria-label="Tabs">
@@ -436,13 +418,28 @@
                                         </div>
                                     </div>
                                 </div>
+                                <div class="p-4">
+                                    <h3 class="text-lg font-semibold mb-4">Model Evaluation</h3>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                                        <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
+                                            <p class="text-sm font-medium text-gray-500">RMSE</p>
+                                            <p class="mt-1 text-2xl font-semibold text-gray-900">${data.rmse.toFixed(2)}</p>
+                                        </div>
+                                        <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
+                                            <p class="text-sm font-medium text-gray-500">MAPE</p>
+                                            <p class="mt-1 text-2xl font-semibold text-gray-900">${data.mape.toFixed(2)}%</p>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <img src="${data.plot}" alt="Model Evaluation Plot" class="rounded-lg w-full max-w-sm mx-auto" />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     `;
 
                     // Now that the elements are in the DOM, find them
                     const provinceSelect = document.getElementById('province-select');
-                    const applyFiltersBtn = document.getElementById('apply-filters-btn');
                     
                     const plotTabBtn = document.getElementById('plot-tab-btn');
                     const tableTabBtn = document.getElementById('table-tab-btn');
@@ -457,6 +454,11 @@
                     }
 
                     // Populate province dropdown
+                    const allProvincesOption = document.createElement('option');
+                    allProvincesOption.value = "All";
+                    allProvincesOption.textContent = "All Provinces";
+                    provinceSelect.appendChild(allProvincesOption);
+
                     if (data.provinces) {
                         data.provinces.forEach(province => {
                             const option = document.createElement('option');
@@ -468,12 +470,15 @@
                     
                     // Set the current values to the inputs
                     provinceSelect.value = data.selected_province || currentProvince;
+                    if (provinceSelect.value === "") { // Ensure "All Provinces" is selected if initial value is empty
+                        provinceSelect.value = "All";
+                    }
 
                     // Update state from backend just in case
                     currentProvince = provinceSelect.value;
 
                     // Attach event listeners
-                    applyFiltersBtn.addEventListener('click', () => {
+                    provinceSelect.addEventListener('change', () => {
                         currentProvince = provinceSelect.value;
                         fetchAndRenderResults();
                         tableHasBeenLoaded = false;
