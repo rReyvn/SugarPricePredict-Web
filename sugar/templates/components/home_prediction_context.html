@@ -4,7 +4,7 @@
             <h3 class="text-xl font-bold text-gray-800 mb-4">Model Overview</h3>
             <div class="space-y-4 text-sm text-gray-700">
                 <div class="flex items-center">
-                    {% include "icons/calendar-1.svg" %}
+                    <div class="bg-indigo-500 rounded-full p-2 mr-2 text-white">{% include "icons/calendar-1.svg" %}</div>
                     <div>
                         <p class="font-semibold">Last Model Training</p>
                         {% if last_trained_timestamp %}
@@ -15,7 +15,7 @@
                     </div>
                 </div>
                 <div class="flex items-center">
-                    {% include "icons/calendar-2.svg" %}
+                    <div class="bg-indigo-500 rounded-full p-2 mr-2 text-white">{% include "icons/calendar-2.svg" %}</div>
                     <div>
                         <p class="font-semibold">Training Data Range</p>
                         {% if training_date_range %}
@@ -33,7 +33,7 @@
             <h3 class="text-xl font-bold text-gray-800 mb-4">Latest Prediction</h3>
             <div class="space-y-4 text-sm text-gray-700">
                 <div class="flex items-center">
-                    {% include "icons/money.svg" %}
+                    <div class="bg-indigo-500 rounded-full p-2 mr-2 text-white">{% include "icons/money.svg" %}</div>
                     <div>
                         <p class="font-semibold">Predicted Price</p>
                         <p id="latest-prediction-info"
@@ -48,7 +48,7 @@
             <h3 class="text-xl font-bold text-gray-800 mb-4">Performance Metrics</h3>
             <div class="space-y-4 text-sm text-gray-700">
                 <div class="flex items-center">
-                    {% include "icons/signal.svg" %}
+                    <div class="bg-indigo-500 rounded-full p-2 mr-2 text-white">{% include "icons/signal.svg" %}</div>
                     <div>
                         <p class="font-semibold">Average Error in Rupiah</p>
                         <p class="text-gray-600">
@@ -61,7 +61,7 @@
                     </div>
                 </div>
                 <div class="flex items-center">
-                    {% include "icons/chart.svg" %}
+                    <div class="bg-indigo-500 rounded-full p-2 mr-2 text-white">{% include "icons/chart.svg" %}</div>
                     <div>
                         <p class="font-semibold">Average Error in Percentage</p>
                         <p class="text-gray-600">
