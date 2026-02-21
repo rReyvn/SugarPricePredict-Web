@@ -1,5 +1,11 @@
 <div class="flex justify-between items-center mb-6">
-    <h1 class="text-3xl font-bold text-gray-800">Sugar Price Predictions</h1>
+    <div class="flex items-center space-x-4">
+        <div class="bg-indigo-600 p-3 rounded-full text-white">{% include "icons/rocket.svg" %}</div>
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Sugar Price Predictions</h1>
+            <p class="text-sm text-gray-500">Forecasting Indonesia Future Sugar Price with Random Forest Regression</p>
+        </div>
+    </div>
     <a href="{% url 'login' %}"
        class="flex items-center justify-center rounded-full bg-gray-100 p-2 text-gray-800 hover:bg-gray-200">
         {% include "icons/login.svg" %}

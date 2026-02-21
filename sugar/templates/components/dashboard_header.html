@@ -1,10 +1,14 @@
 {% load static %}
-<div class="flex justify-between items-center mb-4">
-    <h1 class="text-2xl font-bold">Dashboard</h1>
+<div class="flex justify-between items-center mb-6">
+    <div class="flex items-center space-x-4">
+        <div class="bg-indigo-600 p-3 rounded-full text-white">{% include "icons/signal.svg" %}</div>
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Dashboard</h1>
+            <p class="text-sm text-gray-500">Forecasting Indonesia Future Sugar Price with Random Forest Regression</p>
+        </div>
+    </div>
     <button type="button"
             title="Logout"
             class="flex items-center justify-center rounded-full bg-gray-100 p-2 text-gray-800 hover:bg-gray-200"
-            data-modal-show="logout-confirmation-modal">
-        {% include "icons/logout.svg" %}
-    </button>
+            data-modal-show="logout-confirmation-modal">{% include "icons/logout.svg" %}</button>
 </div>
