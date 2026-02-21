@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                                 </svg>
                                             </span>
                                         </button>
-                                        <div id="custom-province-options" class="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-lg py-1 text-base overflow-auto focus:outline-none sm:text-sm hidden">
+                                        <div id="custom-province-options" class="absolute z-10 mt-2 w-full bg-white shadow-xl max-h-60 rounded-lg border border-gray-300 py-2 px-2 text-base overflow-auto focus:outline-none sm:text-sm hidden">
                                             <!-- Options will be injected here by JavaScript -->
                                         </div>
                                     </div>
@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     const optionDiv = document.createElement('div');
                     optionDiv.dataset.value = value;
                     optionDiv.textContent = text;
-                    optionDiv.classList.add('text-gray-900', 'relative', 'cursor-default', 'select-none', 'py-2', 'pl-3', 'pr-9', 'hover:bg-indigo-600', 'hover:text-white');
+                    optionDiv.classList.add('text-gray-900', 'relative', 'cursor-default', 'select-none', 'py-2', 'px-4', 'rounded-full', 'hover:bg-indigo-600', 'hover:text-white');
                     customProvinceOptions.appendChild(optionDiv);
 
                     // Add click listener for selection
