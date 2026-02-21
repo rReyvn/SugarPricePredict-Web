@@ -107,8 +107,15 @@ document.addEventListener('DOMContentLoaded', function () {
                     });
 
                     // Extract and display latest prediction info
-                    const latestPredictionInfoElement = document.getElementById('latest-prediction-info');
-                    if (latestPredictionInfoElement && data.combined_plot_data.data.length > 0) {
+                    const latestPredictionDateElement = document.getElementById('latest-prediction-date');
+                    const latestPredictionPriceElement = document.getElementById('latest-prediction-price');
+                    const latestPredictionProvinceElement = document.getElementById('latest-prediction-province'); // New
+
+                    if (latestPredictionDateElement && latestPredictionPriceElement && latestPredictionProvinceElement && data.combined_plot_data.data.length > 0) { // New: check latestPredictionProvinceElement
+                        // Set province info
+                        const displayProvince = data.selected_province === "All" ? "All Provinces" : data.selected_province;
+                        latestPredictionProvinceElement.textContent = `${displayProvince}`; // Set province text
+
                         const forecastTraces = data.combined_plot_data.data.filter(trace => trace.name && trace.name.includes('Forecast'));
                         if (forecastTraces.length > 0) {
                             const lastForecastTrace = forecastTraces[forecastTraces.length - 1]; // Get the last forecast trace
@@ -117,14 +124,26 @@ document.addEventListener('DOMContentLoaded', function () {
 
                             if (lastDate && lastPrice !== undefined) {
                                 const formattedPrice = lastPrice.toLocaleString('en-US', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 });
-                                const formattedDate = new Date(lastDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-                                latestPredictionInfoElement.textContent = `${formattedDate}: ${formattedPrice}`;
+                                const dateObj = new Date(lastDate);
+                                const day = String(dateObj.getDate()).padStart(2, '0');
+                                const month = String(dateObj.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+                                const year = dateObj.getFullYear();
+                                const formattedDate = `On ${day}-${month}-${year}`;
+
+                                latestPredictionDateElement.textContent = formattedDate;
+                                latestPredictionPriceElement.textContent = formattedPrice;
+
                             } else {
-                                latestPredictionInfoElement.textContent = 'N/A';
+                                latestPredictionDateElement.textContent = 'Date: N/A';
+                                latestPredictionPriceElement.textContent = 'N/A';
                             }
                         } else {
-                            latestPredictionInfoElement.textContent = 'No forecast data available.';
+                            latestPredictionDateElement.textContent = 'No forecast data available.';
+                            latestPredictionPriceElement.textContent = '';
                         }
+                    } else if (latestPredictionProvinceElement) { // Handle case where plot data is not available
+                        const displayProvince = data.selected_province === "All" ? "All Provinces" : data.selected_province;
+                        latestPredictionProvinceElement.textContent = `${displayProvince}`;
                     }
 
 
