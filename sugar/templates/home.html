@@ -4,7 +4,11 @@
   Sugar Price Prediction
 {% endblock title %}
 {% block content %}
-  <div class="container mx-auto mt-8 px-4">{% include "components/home_results_card.html" %}</div>
+  <div class="container mx-auto px-4 py-8">
+    {% include "components/home_header.html" %}
+    {% include "components/home_prediction_context.html" %}
+    {% include "components/home_results_card.html" %}
+  </div>
 {% endblock content %}
 {% block extra_js %}
   <script src="https://cdn.plot.ly/plotly-3.3.0.min.js" charset="utf-8"></script>

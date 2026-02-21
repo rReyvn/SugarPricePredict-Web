@@ -105,6 +105,29 @@ document.addEventListener('DOMContentLoaded', function () {
                     Plotly.newPlot(combinedPlotDiv, data.combined_plot_data.data, data.combined_plot_data.layout, {
                         responsive: true
                     });
+
+                    // Extract and display latest prediction info
+                    const latestPredictionInfoElement = document.getElementById('latest-prediction-info');
+                    if (latestPredictionInfoElement && data.combined_plot_data.data.length > 0) {
+                        const forecastTraces = data.combined_plot_data.data.filter(trace => trace.name && trace.name.includes('Forecast'));
+                        if (forecastTraces.length > 0) {
+                            const lastForecastTrace = forecastTraces[forecastTraces.length - 1]; // Get the last forecast trace
+                            const lastDate = lastForecastTrace.x[lastForecastTrace.x.length - 1];
+                            const lastPrice = lastForecastTrace.y[lastForecastTrace.y.length - 1];
+
+                            if (lastDate && lastPrice !== undefined) {
+                                const formattedPrice = lastPrice.toLocaleString('en-US', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+                                const formattedDate = new Date(lastDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                                latestPredictionInfoElement.textContent = `${formattedDate}: ${formattedPrice}`;
+                            } else {
+                                latestPredictionInfoElement.textContent = 'N/A';
+                            }
+                        } else {
+                            latestPredictionInfoElement.textContent = 'No forecast data available.';
+                        }
+                    }
+
+
                 }
 
                 // Clear previous options

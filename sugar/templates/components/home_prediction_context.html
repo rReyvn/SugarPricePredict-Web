@@ -1,0 +1,79 @@
+<div class="mb-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="p-6 bg-white rounded-2xl shadow-md flex flex-col justify-between">
+        <div>
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Model Overview</h3>
+            <div class="space-y-4 text-sm text-gray-700">
+                <div class="flex items-center">
+                    {% include "icons/calendar-1.svg" %}
+                    <div>
+                        <p class="font-semibold">Last Model Training</p>
+                        {% if last_trained_timestamp %}
+                            <p>{{ last_trained_timestamp|date:"d-m-Y H:i" }}</p>
+                        {% else %}
+                            <p class="text-gray-500">N/A (Model not yet trained)</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    {% include "icons/calendar-2.svg" %}
+                    <div>
+                        <p class="font-semibold">Training Data Range</p>
+                        {% if training_date_range %}
+                            <p>{{ training_date_range }}</p>
+                        {% else %}
+                            <p class="text-gray-500">N/A (No training data available)</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="p-6 bg-white rounded-2xl shadow-md flex flex-col justify-between">
+        <div>
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Latest Prediction</h3>
+            <div class="space-y-4 text-sm text-gray-700">
+                <div class="flex items-center">
+                    {% include "icons/money.svg" %}
+                    <div>
+                        <p class="font-semibold">Predicted Price</p>
+                        <p id="latest-prediction-info"
+                           class="text-base font-bold text-indigo-600">Loading...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="p-6 bg-white rounded-2xl shadow-md flex flex-col justify-between">
+        <div>
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Performance Metrics</h3>
+            <div class="space-y-4 text-sm text-gray-700">
+                <div class="flex items-center">
+                    {% include "icons/signal.svg" %}
+                    <div>
+                        <p class="font-semibold">Average Error in Rupiah</p>
+                        <p class="text-gray-600">
+                            {% if rmse %}
+                                <span class="font-medium text-gray-900">{{ rmse|floatformat:"2" }}</span>
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    {% include "icons/chart.svg" %}
+                    <div>
+                        <p class="font-semibold">Average Error in Percentage</p>
+                        <p class="text-gray-600">
+                            {% if mape %}
+                                <span class="font-medium text-gray-900">{{ mape|floatformat:"2" }}%</span>
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
