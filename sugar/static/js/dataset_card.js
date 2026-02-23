@@ -85,13 +85,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const excelFileUploadForm = document.getElementById('excel-file-upload-for-form'); // The file input actually inside the form
     const fileNameDisplay = document.getElementById('file-name-display');
     const submitUploadBtn = document.getElementById('submit-upload-btn');
+    const hiddenUploadForm = document.getElementById('hidden-upload-form');
 
     if (excelFileUploadUI && fileNameDisplay && submitUploadBtn && excelFileUploadForm) {
-        excelFileUploadUI.addEventListener('change', function() {
+        excelFileUploadUI.addEventListener('change', function () {
             if (this.files && this.files.length > 0) {
                 fileNameDisplay.textContent = this.files[0].name;
                 submitUploadBtn.disabled = false; // Enable submit button
-                
+
                 // Crucial: Transfer the selected file(s) to the form's input
                 // This creates a new DataTransfer object and assigns its files to the form's input
                 const dataTransfer = new DataTransfer();
@@ -109,7 +110,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Add event listener to the UI upload button to submit the hidden form
-    submitUploadBtn.addEventListener('click', function() {
+    submitUploadBtn.addEventListener('click', function () {
         if (!this.disabled) { // Only submit if the button is enabled
             hiddenUploadForm.submit();
         }
