@@ -3,9 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import root_mean_squared_error, mean_absolute_percentage_error
-from sklearn import tree
 from hijridate import Hijri, Gregorian
-from pathlib import Path
 import os
 from django.conf import settings
 
@@ -363,6 +361,9 @@ def plot_combined_forecast(
     """
     traces = []
 
+    # Sort historical data to ensure chronological plotting
+    df_historical = df_historical.sort_values("Date")
+
     # Historical data trace
     if (
         "Province" in df_historical.columns
@@ -391,6 +392,9 @@ def plot_combined_forecast(
                 "line": {"color": "blue"},
             }
         )
+
+    # Sort predicted data to ensure chronological plotting
+    df_predicted = df_predicted.sort_values("Date")
 
     # Predicted data trace
     if (

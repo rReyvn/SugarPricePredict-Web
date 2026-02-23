@@ -2,7 +2,6 @@ import os
 import pandas as pd
 import joblib
 from django.conf import settings
-from datetime import datetime
 from django.utils import timezone
 from .models import TrainingLock
 from .pipeline import (
