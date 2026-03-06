@@ -89,18 +89,23 @@ document.addEventListener('DOMContentLoaded', function () {
                             </div>
                             <div class="p-4">
                                 <h3 class="text-lg font-semibold mb-4">Model Evaluation</h3>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                                    <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
-                                        <p class="text-sm font-medium text-gray-500">RMSE</p>
-                                        <p class="mt-1 text-2xl font-semibold text-gray-900">${data.rmse.toFixed(2)}</p>
+                                <div class="grid grid-cols-1 gap-4">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
+                                            <p class="text-sm font-medium text-gray-500">RMSE</p>
+                                            <p class="mt-1 text-2xl font-semibold text-gray-900">${data.rmse.toFixed(2)}</p>
+                                        </div>
+                                        <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
+                                            <p class="text-sm font-medium text-gray-500">MAPE</p>
+                                            <p class="mt-1 text-2xl font-semibold text-gray-900">${data.mape.toFixed(2)}%</p>
+                                        </div>
                                     </div>
-                                    <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
-                                        <p class="text-sm font-medium text-gray-500">MAPE</p>
-                                        <p class="mt-1 text-2xl font-semibold text-gray-900">${data.mape.toFixed(2)}%</p>
+                                    <div class="flex flex-col sm:flex-row gap-4">
+                                        <div class="rounded-lg w-full sm:w-1/2 max-w-sm mx-auto">
+                                            <img src="${data.plot}" alt="Model Evaluation Plot" class="rounded-lg w-full" />
+                                        </div>
+                                        <div id="eval-plot-line-div" class="w-full sm:w-1/2 rounded-lg" style="height: 400px;"></div>
                                     </div>
-                                </div>
-                                <div>
-                                    <img src="${data.plot}" alt="Model Evaluation Plot" class="rounded-lg w-full max-w-sm mx-auto" />
                                 </div>
                             </div>
                         </div>
@@ -116,12 +121,46 @@ document.addEventListener('DOMContentLoaded', function () {
                 const tableContainer = document.getElementById('table-container');
                 let tableHasBeenLoaded = false;
 
+                function updateEvalPlotVisibility(province) {
+                    const evalPlotLineDiv = document.getElementById('eval-plot-line-div');
+                    if (!evalPlotLineDiv || !evalPlotLineDiv.offsetParent) {
+                        // If the plot is not visible, do nothing
+                        return;
+                    }
+                    
+                    const update = {
+                        'visible': []
+                    };
+                    let isMeanVisible = (province === 'All');
+
+                    evalPlotLineDiv.data.forEach((trace, i) => {
+                        if (trace.name.startsWith('Mean')) {
+                            update.visible.push(isMeanVisible);
+                        } else {
+                            // Extracts province name from trace name like "DKI JAKARTA - Actual"
+                            const traceProvince = trace.name.split(' - ')[0];
+                            update.visible.push(traceProvince === province);
+                        }
+                    });
+
+                    Plotly.restyle(evalPlotLineDiv, update);
+                }
+
                 const combinedPlotDiv = document.getElementById('combined-plot-div');
                 if (data.combined_plot_data && combinedPlotDiv) {
                     Plotly.newPlot(combinedPlotDiv, data.combined_plot_data.data, data.combined_plot_data.layout, {
                         responsive: true
                     });
                 }
+
+                const evalPlotLineDiv = document.getElementById('eval-plot-line-div');
+                if (data.eval_plot_line_data && evalPlotLineDiv) {
+                    Plotly.newPlot(evalPlotLineDiv, data.eval_plot_line_data.data, data.eval_plot_line_data.layout, {
+                        responsive: true
+                    });
+                    updateEvalPlotVisibility(currentProvince);
+                }
+
 
                 // Clear previous options
                 customProvinceOptions.innerHTML = '';

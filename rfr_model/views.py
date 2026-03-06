@@ -18,6 +18,7 @@ from .pipeline import (
     DF_TRANSFORMED_PATH,
     CACHED_PREDICTIONS_PATH,
     plot_combined_forecast,
+    EVAL_PLOT_LINE_PATH,
 )
 
 
@@ -75,6 +76,7 @@ def prediction_results_view(request):
         EVALUATION_METRICS_PATH,
         DF_TRANSFORMED_PATH,
         CACHED_PREDICTIONS_PATH,
+        EVAL_PLOT_LINE_PATH,
     ]
 
     # Check for existence of all base required files
@@ -92,6 +94,7 @@ def prediction_results_view(request):
         evaluation_metrics = joblib.load(EVALUATION_METRICS_PATH)
         df_transformed = joblib.load(DF_TRANSFORMED_PATH)
         cached_predictions = joblib.load(CACHED_PREDICTIONS_PATH)
+        eval_plot_line_data = joblib.load(EVAL_PLOT_LINE_PATH)
 
         # Determine prediction start date (day after the last date in the historical data)
         prediction_start_date = df_transformed["Date"].max() + pd.Timedelta(days=1)
@@ -169,7 +172,8 @@ def prediction_results_view(request):
                 "plot": plot_base64,  # Original evaluation plot (Matplotlib)
                 "rmse": rmse_value,
                 "mape": mape_value,
-                "combined_plot_data": plotly_combined_plot_data,  # New Plotly JSON data
+                "combined_plot_data": plotly_combined_plot_data,
+                "eval_plot_line_data": eval_plot_line_data,
                 "provinces": all_provinces,  # List of provinces for frontend dropdown
                 "selected_province": selected_province,
                 "prediction_start_date": prediction_start_date.strftime("%Y-%m-%d"),

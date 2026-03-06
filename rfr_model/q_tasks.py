@@ -19,6 +19,7 @@ from .pipeline import (
     EVALUATION_METRICS_PATH,
     DF_TRANSFORMED_PATH,
     CACHED_PREDICTIONS_PATH,
+    EVAL_PLOT_LINE_PATH,
 )
 
 
@@ -67,7 +68,7 @@ def train_on_all_datasets_task():
 
         # Train Model
         print("Training the model...")
-        model, evaluation, plot = train_model(df_transformed)
+        model, evaluation, plot, df_eval, line_plot_data = train_model(df_transformed)
 
         # Generate and save forecast results
         print("Generating forecast...")
@@ -103,6 +104,7 @@ def train_on_all_datasets_task():
         joblib.dump(evaluation, EVALUATION_METRICS_PATH)
         joblib.dump(df_transformed, DF_TRANSFORMED_PATH)
         joblib.dump(cached_predictions, CACHED_PREDICTIONS_PATH)
+        joblib.dump(line_plot_data, EVAL_PLOT_LINE_PATH)
         plot.savefig(EVAL_PLOT_PATH)
         plot.close()
 

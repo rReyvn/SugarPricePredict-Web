@@ -19,6 +19,7 @@ COMBINED_PLOT_PATH = os.path.join(MODEL_DIR, "combined_forecast_plot.png")
 EVALUATION_METRICS_PATH = os.path.join(MODEL_DIR, "evaluation_metrics.joblib")
 DF_TRANSFORMED_PATH = os.path.join(MODEL_DIR, "df_transformed.joblib")
 CACHED_PREDICTIONS_PATH = os.path.join(MODEL_DIR, "cached_predictions.joblib")
+EVAL_PLOT_LINE_PATH = os.path.join(MODEL_DIR, "eval_plot_line.joblib")
 
 
 def load_and_prepare_df(file_path):
@@ -205,7 +206,7 @@ def train_model(df_mining: pd.DataFrame):
     TARGET_COL = "Price"
 
     # Specify X for features and y for target
-    X = df_mining[FEATURE_COLS]
+    X = df_mining.drop(columns=[TARGET_COL])
     y = df_mining[TARGET_COL]
 
     # Time-based train-test split
@@ -214,10 +215,10 @@ def train_model(df_mining: pd.DataFrame):
     y_train, y_test = y.iloc[:split_index], y.iloc[split_index:]
 
     model = RandomForestRegressor(**RFR_PARAMS)
-    model.fit(X_train, y_train)
+    model.fit(X_train[FEATURE_COLS], y_train)
 
     # Predict
-    y_pred = model.predict(X_test)
+    y_pred = model.predict(X_test[FEATURE_COLS])
 
     # Evaluation Metrics
     rmse = root_mean_squared_error(y_test, y_pred)
@@ -240,7 +241,78 @@ def train_model(df_mining: pd.DataFrame):
     # The plot is returned to be handled by the view (e.g., save to buffer)
     plot = plt
 
-    return model, evaluation, plot
+    # Create a DataFrame for line plot evaluation
+    df_eval = pd.DataFrame(
+        {
+            "Date": X_test["Date"],
+            "Province": X_test["Province"],
+            "Actual": y_test,
+            "Predicted": y_pred,
+        }
+    )
+
+    # Generate line plot data
+    line_plot_data = plot_actual_vs_prediction_line(df_eval, title="Actual vs. Predicted Trend")
+
+    return model, evaluation, plot, df_eval, line_plot_data
+
+
+def plot_actual_vs_prediction_line(df_eval, title="Actual vs. Predicted Trend"):
+    """
+    Prepares actual vs. predicted data for client-side plotting with Plotly.
+    """
+    traces = []
+    
+    # Group by province to create a trace for each
+    for province, group in df_eval.groupby("Province"):
+        # Actual data trace
+        traces.append({
+            "x": group["Date"].dt.strftime("%Y-%m-%d").tolist(),
+            "y": group["Actual"].tolist(),
+            "mode": "lines",
+            "name": f"{province} - Actual",
+            "line": {"color": "blue"},
+            "visible": "legendonly"  # Initially hidden
+        })
+        
+        # Predicted data trace
+        traces.append({
+            "x": group["Date"].dt.strftime("%Y-%m-%d").tolist(),
+            "y": group["Predicted"].tolist(),
+            "mode": "lines",
+            "name": f"{province} - Predicted",
+            "line": {"dash": "dash", "color": "red"},
+            "visible": "legendonly"  # Initially hidden
+        })
+
+    # Add traces for the mean of all provinces
+    df_mean = df_eval.groupby("Date").mean(numeric_only=True).reset_index()
+    traces.append({
+        "x": df_mean["Date"].dt.strftime("%Y-%m-%d").tolist(),
+        "y": df_mean["Actual"].tolist(),
+        "mode": "lines",
+        "name": "Mean - Actual",
+        "line": {"color": "darkblue", "width": 3},
+        "visible": True  # Initially visible
+    })
+    traces.append({
+        "x": df_mean["Date"].dt.strftime("%Y-%m-%d").tolist(),
+        "y": df_mean["Predicted"].tolist(),
+        "mode": "lines",
+        "name": "Mean - Predicted",
+        "line": {"dash": "dash", "color": "darkred", "width": 3},
+        "visible": True  # Initially visible
+    })
+    
+    layout = {
+        "title": title,
+        "xaxis": {"title": "Date"},
+        "yaxis": {"title": "Price"},
+        "hovermode": "x unified",
+        "legend": {"traceorder": "normal"}
+    }
+    
+    return {"data": traces, "layout": layout}
 
 
 def forecast_future_data(
