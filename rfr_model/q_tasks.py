@@ -61,6 +61,7 @@ def train_on_all_datasets_task():
         # Merge all cleaned datasets
         print("Merging datasets...")
         merged_df = merge_data(list_of_cleaned_dfs)
+        merged_df = merged_df.sort_values(by="Date").reset_index(drop=True)
 
         # Transform data (feature engineering)
         print("Running feature engineering...")
