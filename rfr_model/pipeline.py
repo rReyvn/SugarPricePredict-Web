@@ -233,7 +233,6 @@ def train_model(df_mining: pd.DataFrame):
     max_val = max(y_test.max(), y_pred.max())
     min_val = min(y_test.min(), y_pred.min())
     plt.plot([min_val, max_val], [min_val, max_val], "r--", linewidth=2)
-    plt.title("Actual vs Prediction")
     plt.xlabel("Actual")
     plt.ylabel("Prediction")
     plt.tight_layout()
@@ -252,7 +251,9 @@ def train_model(df_mining: pd.DataFrame):
     )
 
     # Generate line plot data
-    line_plot_data = plot_actual_vs_prediction_line(df_eval, title="Actual vs. Predicted Trend")
+    line_plot_data = plot_actual_vs_prediction_line(
+        df_eval, title="Actual vs. Predicted Trend"
+    )
 
     return model, evaluation, plot, df_eval, line_plot_data
 
@@ -262,56 +263,64 @@ def plot_actual_vs_prediction_line(df_eval, title="Actual vs. Predicted Trend"):
     Prepares actual vs. predicted data for client-side plotting with Plotly.
     """
     traces = []
-    
+
     # Group by province to create a trace for each
     for province, group in df_eval.groupby("Province"):
         # Actual data trace
-        traces.append({
-            "x": group["Date"].dt.strftime("%Y-%m-%d").tolist(),
-            "y": group["Actual"].tolist(),
-            "mode": "lines",
-            "name": f"{province} - Actual",
-            "line": {"color": "blue"},
-            "visible": "legendonly"  # Initially hidden
-        })
-        
+        traces.append(
+            {
+                "x": group["Date"].dt.strftime("%Y-%m-%d").tolist(),
+                "y": group["Actual"].tolist(),
+                "mode": "lines",
+                "name": f"{province} - Actual",
+                "line": {"color": "blue"},
+                "visible": "legendonly",  # Initially hidden
+            }
+        )
+
         # Predicted data trace
-        traces.append({
-            "x": group["Date"].dt.strftime("%Y-%m-%d").tolist(),
-            "y": group["Predicted"].tolist(),
-            "mode": "lines",
-            "name": f"{province} - Predicted",
-            "line": {"dash": "dash", "color": "red"},
-            "visible": "legendonly"  # Initially hidden
-        })
+        traces.append(
+            {
+                "x": group["Date"].dt.strftime("%Y-%m-%d").tolist(),
+                "y": group["Predicted"].tolist(),
+                "mode": "lines",
+                "name": f"{province} - Predicted",
+                "line": {"dash": "dash", "color": "red"},
+                "visible": "legendonly",  # Initially hidden
+            }
+        )
 
     # Add traces for the mean of all provinces
     df_mean = df_eval.groupby("Date").mean(numeric_only=True).reset_index()
-    traces.append({
-        "x": df_mean["Date"].dt.strftime("%Y-%m-%d").tolist(),
-        "y": df_mean["Actual"].tolist(),
-        "mode": "lines",
-        "name": "Mean - Actual",
-        "line": {"color": "darkblue", "width": 3},
-        "visible": True  # Initially visible
-    })
-    traces.append({
-        "x": df_mean["Date"].dt.strftime("%Y-%m-%d").tolist(),
-        "y": df_mean["Predicted"].tolist(),
-        "mode": "lines",
-        "name": "Mean - Predicted",
-        "line": {"dash": "dash", "color": "darkred", "width": 3},
-        "visible": True  # Initially visible
-    })
-    
+    traces.append(
+        {
+            "x": df_mean["Date"].dt.strftime("%Y-%m-%d").tolist(),
+            "y": df_mean["Actual"].tolist(),
+            "mode": "lines",
+            "name": "Mean - Actual",
+            "line": {"color": "darkblue", "width": 3},
+            "visible": True,  # Initially visible
+        }
+    )
+    traces.append(
+        {
+            "x": df_mean["Date"].dt.strftime("%Y-%m-%d").tolist(),
+            "y": df_mean["Predicted"].tolist(),
+            "mode": "lines",
+            "name": "Mean - Predicted",
+            "line": {"dash": "dash", "color": "darkred", "width": 3},
+            "visible": True,  # Initially visible
+        }
+    )
+
     layout = {
         "title": title,
         "xaxis": {"title": "Date"},
         "yaxis": {"title": "Price"},
         "hovermode": "x unified",
-        "legend": {"traceorder": "normal"}
+        "legend": {"traceorder": "normal"},
     }
-    
+
     return {"data": traces, "layout": layout}
 
 
