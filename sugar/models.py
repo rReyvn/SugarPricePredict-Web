@@ -1,4 +1,5 @@
 import os
+import io
 from django.db import models
 from django.conf import settings
 from datetime import datetime
@@ -6,76 +7,63 @@ import pandas as pd
 from .storage import DatasetStorage # Import the custom storage
 
 class UploadedFile(models.Model):
+    PRICE_TYPE_CHOICES = [
+        ("local", "Local"),
+        ("premium", "Premium"),
+    ]
+    price_type = models.CharField(
+        max_length=10,
+        choices=PRICE_TYPE_CHOICES,
+        default="local",
+    )
     file = models.FileField(storage=DatasetStorage()) # Use the custom storage
     upload_date = models.DateTimeField(auto_now_add=True)
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
 
     def save(self, *args, **kwargs):
-        is_new_file = self._state.adding # Check if it's a new instance being added
-        # Save the model instance first to ensure self.file is populated and has a temporary path
-        super().save(*args, **kwargs)
+        # This logic only applies when a file is being added for the first time.
+        if self._state.adding and self.file:
+            price_type = self.price_type
+            if not price_type:
+                # This should be caught by the model validation, but as a safeguard:
+                raise ValueError("Price type must be set.")
 
-        # Only process if it's a new file and dates haven't been set yet
-        if is_new_file and self.file and not self.start_date and not self.end_date:
-            original_temp_file_path = self.file.path # Path to the initially uploaded file
             try:
-                with open(original_temp_file_path, 'rb') as f:
-                    df = pd.read_excel(f)
+                # Process the file in memory.
+                self.file.seek(0)
+                df = pd.read_excel(io.BytesIO(self.file.read()))
 
-                dates = []
-                for col in df.columns:
-                    try:
-                        dates.append(pd.to_datetime(col, format="%d/ %m/ %Y"))
-                    except (ValueError, TypeError):
-                        continue
+                dates = [pd.to_datetime(col, format="%d/ %m/ %Y", errors='coerce') for col in df.columns]
+                dates = [d for d in dates if not pd.isna(d)]
 
-                if dates:
-                    start_date = min(dates).date()
-                    end_date = max(dates).date()
+                if not dates:
+                    raise ValueError("No valid dates found in file columns.")
 
-                    self.start_date = start_date
-                    self.end_date = end_date
-                    
-                    _, file_extension = os.path.splitext(self.file.name)
-                    new_filename = f"{start_date.strftime('%Y-%m-%d')}_{end_date.strftime('%Y-%m-%d')}{file_extension}"
-                    
-                    # --- Start of new logic to handle replacement ---
-                    # Check if a file with the new_filename already exists in the database
-                    existing_files_with_same_name = UploadedFile.objects.filter(file=new_filename)
-                    # Important: Ensure we don't try to delete the current instance if it somehow matches
-                    # (e.g., if we were updating an existing instance, though current flow creates new ones)
-                    if self.pk: # if it's an existing object
-                        existing_files_with_same_name = existing_files_with_same_name.exclude(pk=self.pk)
+                self.start_date = min(dates).date()
+                self.end_date = max(dates).date()
 
-                    for existing_file in existing_files_with_same_name:
-                        # This deletes both the DB record and the file on disk via the model's delete method
-                        existing_file.delete() 
-                    # --- End of new logic ---
+                _, file_extension = os.path.splitext(self.file.name)
+                
+                # Check for and delete any existing file with the same name to avoid duplicates.
+                new_filename_base = f"{price_type.capitalize()}_{self.start_date.strftime('%Y-%m-%d')}_{self.end_date.strftime('%Y-%m-%d')}{file_extension}"
+                new_filename_with_path = os.path.join(price_type, new_filename_base)
 
-                    # Construct the final path where the current file should be moved
-                    final_storage_path = self.file.storage.path(new_filename)
+                existing_files = UploadedFile.objects.filter(file=new_filename_with_path)
+                for f in existing_files:
+                    f.delete() # This will also delete the file from storage.
 
-                    # Rename (move) the temporarily saved file to its final, derived name
-                    os.rename(original_temp_file_path, final_storage_path)
-                    
-                    # Update the FileField's name attribute to reflect the new name relative to storage
-                    self.file.name = new_filename
-                    
-                    # Save the model again with the updated file name and date fields
-                    super().save(update_fields=['file', 'start_date', 'end_date'])
-
-                else:
-                    # If no dates are found, delete the initially saved temporary file and this model instance
-                    if os.path.exists(original_temp_file_path):
-                        os.remove(original_temp_file_path)
-                    self.delete()
+                # Set the final name, which the storage backend will use.
+                self.file.name = new_filename_with_path
 
             except Exception as e:
-                # Clean up: remove the initially saved temporary file and this model instance
-                if os.path.exists(original_temp_file_path):
-                    os.remove(original_temp_file_path)
-                self.delete()
+                # If any part of the processing fails, abort the save.
+                # By not calling super().save(), the object is never persisted.
+                print(f"Failed to process and save new file: {e}")
+                return 
+
+        # Call the actual save method. For new files, this happens after processing.
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return os.path.basename(self.file.name)

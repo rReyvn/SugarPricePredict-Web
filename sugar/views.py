@@ -7,14 +7,20 @@ from datetime import datetime
 import os
 import joblib
 from .models import UploadedFile
-from rfr_model.pipeline import LAST_TRAINING_TIMESTAMP_PATH, DF_TRANSFORMED_PATH, EVALUATION_METRICS_PATH
+from rfr_model.pipeline import get_model_paths
 
 
 def home(request):
+    price_type = request.GET.get("price_type") or "local"
+    if price_type not in ["local", "premium"]:
+        price_type = "local"
+    
+    paths = get_model_paths(price_type)
+
     # Get last trained timestamp
     last_trained_timestamp = None
-    if os.path.exists(LAST_TRAINING_TIMESTAMP_PATH):
-        with open(LAST_TRAINING_TIMESTAMP_PATH, "r") as f:
+    if os.path.exists(paths["last_training_timestamp_path"]):
+        with open(paths["last_training_timestamp_path"], "r") as f:
             try:
                 last_trained_timestamp = datetime.fromisoformat(f.read().strip())
             except ValueError:
@@ -22,9 +28,9 @@ def home(request):
 
     # Get model training date range
     training_date_range = None
-    if os.path.exists(DF_TRANSFORMED_PATH):
+    if os.path.exists(paths["df_transformed_path"]):
         try:
-            df_transformed = joblib.load(DF_TRANSFORMED_PATH)
+            df_transformed = joblib.load(paths["df_transformed_path"])
             if not df_transformed.empty and "Date" in df_transformed.columns:
                 min_date = df_transformed["Date"].min().strftime("%d-%m-%Y")
                 max_date = df_transformed["Date"].max().strftime("%d-%m-%Y")
@@ -35,9 +41,9 @@ def home(request):
     # Get RMSE and MAPE values
     rmse = None
     mape = None
-    if os.path.exists(EVALUATION_METRICS_PATH):
+    if os.path.exists(paths["evaluation_metrics_path"]):
         try:
-            evaluation_metrics = joblib.load(EVALUATION_METRICS_PATH)
+            evaluation_metrics = joblib.load(paths["evaluation_metrics_path"])
             rmse = evaluation_metrics.get("RMSE")
             mape = evaluation_metrics.get("MAPE")
         except Exception:
@@ -48,6 +54,7 @@ def home(request):
         "training_date_range": training_date_range,
         "rmse": rmse,
         "mape": mape,
+        "price_type": price_type,
     }
     return render(request, "home.html", context)
 
@@ -77,20 +84,25 @@ def dashboard_view(request):
 
     if request.method == "POST" and "excel_file" in request.FILES:
         file = request.FILES["excel_file"]
-        # The save method of the model will handle the processing
-        UploadedFile.objects.create(file=file)
-        return redirect("dashboard")
+        # The price_type is now in the POST data from the hidden input
+        price_type_from_form = request.POST.get("price_type", "local")
+        UploadedFile.objects.create(file=file, price_type=price_type_from_form)
+        return redirect(f"/dashboard/?price_type={price_type_from_form}")
 
-    uploaded_files_list = UploadedFile.objects.all().order_by("-upload_date")
+    price_type = request.GET.get("price_type") or "local"
+    if price_type not in ["local", "premium"]:
+        price_type = "local"
+
+    paths = get_model_paths(price_type)
+    uploaded_files_list = UploadedFile.objects.filter(price_type=price_type).order_by("-upload_date")
 
     paginator = Paginator(uploaded_files_list, 5)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
-    # Get last trained timestamp
     last_trained_timestamp = None
-    if os.path.exists(LAST_TRAINING_TIMESTAMP_PATH):
-        with open(LAST_TRAINING_TIMESTAMP_PATH, "r") as f:
+    if os.path.exists(paths["last_training_timestamp_path"]):
+        with open(paths["last_training_timestamp_path"], "r") as f:
             try:
                 last_trained_timestamp = datetime.fromisoformat(f.read().strip())
             except ValueError:
@@ -99,6 +111,7 @@ def dashboard_view(request):
     context = {
         "uploaded_files": page_obj,
         "last_trained_timestamp": last_trained_timestamp,
+        "price_type": price_type,
     }
 
     return render(request, "dashboard.html", context)

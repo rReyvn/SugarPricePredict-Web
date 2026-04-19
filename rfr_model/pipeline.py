@@ -7,19 +7,32 @@ from hijridate import Hijri, Gregorian
 import os
 from django.conf import settings
 
-# Define paths for model artifacts
-MODEL_DIR = os.path.join(settings.BASE_DIR, "rfr_model", "output", "model")
-os.makedirs(MODEL_DIR, exist_ok=True)
-MODEL_PATH = os.path.join(MODEL_DIR, "rfr_model.joblib")
-PROVINCE_MAP_PATH = os.path.join(MODEL_DIR, "province_mapping.joblib")
-EVAL_PLOT_PATH = os.path.join(MODEL_DIR, "evaluation_plot.png")
-LAST_TRAINING_TIMESTAMP_PATH = os.path.join(MODEL_DIR, "last_training_timestamp.txt")
-FORECAST_RESULTS_PATH = os.path.join(MODEL_DIR, "forecast_results.joblib")
-COMBINED_PLOT_PATH = os.path.join(MODEL_DIR, "combined_forecast_plot.png")
-EVALUATION_METRICS_PATH = os.path.join(MODEL_DIR, "evaluation_metrics.joblib")
-DF_TRANSFORMED_PATH = os.path.join(MODEL_DIR, "df_transformed.joblib")
-CACHED_PREDICTIONS_PATH = os.path.join(MODEL_DIR, "cached_predictions.joblib")
-EVAL_PLOT_LINE_PATH = os.path.join(MODEL_DIR, "eval_plot_line.joblib")
+
+def get_model_paths(price_type: str) -> dict:
+    """
+    Returns a dictionary of paths for model artifacts based on the price type.
+    """
+    if price_type not in ["local", "premium"]:
+        raise ValueError("price_type must be either 'local' or 'premium'")
+
+    model_dir = os.path.join(settings.BASE_DIR, "rfr_model", "output", price_type)
+    os.makedirs(model_dir, exist_ok=True)
+
+    return {
+        "model_dir": model_dir,
+        "model_path": os.path.join(model_dir, "rfr_model.joblib"),
+        "province_map_path": os.path.join(model_dir, "province_mapping.joblib"),
+        "eval_plot_path": os.path.join(model_dir, "evaluation_plot.png"),
+        "last_training_timestamp_path": os.path.join(
+            model_dir, "last_training_timestamp.txt"
+        ),
+        "forecast_results_path": os.path.join(model_dir, "forecast_results.joblib"),
+        "combined_plot_path": os.path.join(model_dir, "combined_forecast_plot.png"),
+        "evaluation_metrics_path": os.path.join(model_dir, "evaluation_metrics.joblib"),
+        "df_transformed_path": os.path.join(model_dir, "df_transformed.joblib"),
+        "cached_predictions_path": os.path.join(model_dir, "cached_predictions.joblib"),
+        "eval_plot_line_path": os.path.join(model_dir, "eval_plot_line.joblib"),
+    }
 
 
 def load_and_prepare_df(file_path):
@@ -35,9 +48,14 @@ def load_and_prepare_df(file_path):
 
     # Check for "Province" or "Komoditas (Rp)"
     if "Province" in df.columns:
+        # Drop "Semua Provinsi"
+        df = df[df["Province"] != "Semua Provinsi"]
         return df
     elif "Komoditas (Rp)" in df.columns:
-        return df.rename(columns={"Komoditas (Rp)": "Province"})
+        df = df.rename(columns={"Komoditas (Rp)": "Province"})
+        # Drop "Semua Provinsi" data
+        df = df[df["Province"] != "Semua Provinsi"]
+        return df
     else:
         raise ValueError(
             f"File '{os.path.basename(file_path)}' is missing a 'Province' or 'Komoditas (Rp)' column."

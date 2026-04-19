@@ -1,5 +1,6 @@
 {% load static %}
-<div class="flex justify-between items-center mb-6">
+<div class="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center md:space-y-0 mb-6">
+    <!-- Title -->
     <div class="flex items-center space-x-4">
         <div class="bg-indigo-600 p-3 rounded-full text-white">{% include "icons/signal.svg" %}</div>
         <div>
@@ -7,8 +8,16 @@
             <p class="text-sm text-gray-500">Forecasting Indonesia Future Sugar Price with Random Forest Regression</p>
         </div>
     </div>
-    <button type="button"
-            title="Logout"
-            class="flex items-center justify-center rounded-full bg-gray-100 p-2 text-gray-800 hover:bg-gray-200"
-            data-modal-show="logout-confirmation-modal">{% include "icons/logout.svg" %}</button>
+
+    <!-- Right-side Group (Filter + Button) -->
+    <div class="flex flex-wrap items-center justify-center gap-x-2 gap-y-2">
+        <!-- Filter -->
+        <a href="?price_type=local" class="px-4 py-2 text-sm font-medium rounded-full {% if price_type == 'local' %}bg-indigo-600 text-white{% else %}bg-gray-200 text-gray-700{% endif %}">Local</a>
+        <a href="?price_type=premium" class="px-4 py-2 text-sm font-medium rounded-full {% if price_type == 'premium' %}bg-indigo-600 text-white{% else %}bg-gray-200 text-gray-700{% endif %}">Premium</a>
+        <!-- Logout Button -->
+        <button type="button"
+                title="Logout"
+                class="flex items-center justify-center rounded-full bg-gray-100 p-2 text-gray-800 hover:bg-gray-200"
+                data-modal-show="logout-confirmation-modal">{% include "icons/logout.svg" %}</button>
+    </div>
 </div>

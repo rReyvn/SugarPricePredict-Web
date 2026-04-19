@@ -11,26 +11,19 @@ from .pipeline import (
     merge_data,
     load_and_prepare_df,
     forecast_future_data,
-    MODEL_PATH,
-    PROVINCE_MAP_PATH,
-    EVAL_PLOT_PATH,
-    LAST_TRAINING_TIMESTAMP_PATH,
-    FORECAST_RESULTS_PATH,
-    EVALUATION_METRICS_PATH,
-    DF_TRANSFORMED_PATH,
-    CACHED_PREDICTIONS_PATH,
-    EVAL_PLOT_LINE_PATH,
+    get_model_paths,
 )
 
 
-def train_on_all_datasets_task():
+def train_on_all_datasets_task(price_type: str):
     """
-    A Django Q task that finds all datasets, cleans, merges,
-    trains a model, and saves the artifacts.
+    A Django Q task that finds all datasets for a given price type,
+    cleans, merges, trains a model, and saves the artifacts.
     """
     try:
-        print("Starting model training on all datasets...")
-        upload_dir = os.path.join(settings.BASE_DIR, "rfr_model", "datasets")
+        print(f"Starting model training for price type: {price_type}...")
+        paths = get_model_paths(price_type)
+        upload_dir = os.path.join(settings.BASE_DIR, "rfr_model", "datasets", price_type)
 
         all_files = [
             os.path.join(upload_dir, f)
@@ -39,7 +32,7 @@ def train_on_all_datasets_task():
         ]
 
         if not all_files:
-            print("No datasets found to train on.")
+            print(f"No datasets found in {upload_dir} to train on.")
             return
 
         list_of_cleaned_dfs = []
@@ -99,18 +92,18 @@ def train_on_all_datasets_task():
 
         # Save artifacts
         print("Saving model and artifacts...")
-        joblib.dump(model, MODEL_PATH)
-        joblib.dump(province_mapping, PROVINCE_MAP_PATH)
-        joblib.dump(forecast_df, FORECAST_RESULTS_PATH)
-        joblib.dump(evaluation, EVALUATION_METRICS_PATH)
-        joblib.dump(df_transformed, DF_TRANSFORMED_PATH)
-        joblib.dump(cached_predictions, CACHED_PREDICTIONS_PATH)
-        joblib.dump(line_plot_data, EVAL_PLOT_LINE_PATH)
-        plot.savefig(EVAL_PLOT_PATH)
+        joblib.dump(model, paths["model_path"])
+        joblib.dump(province_mapping, paths["province_map_path"])
+        joblib.dump(forecast_df, paths["forecast_results_path"])
+        joblib.dump(evaluation, paths["evaluation_metrics_path"])
+        joblib.dump(df_transformed, paths["df_transformed_path"])
+        joblib.dump(cached_predictions, paths["cached_predictions_path"])
+        joblib.dump(line_plot_data, paths["eval_plot_line_path"])
+        plot.savefig(paths["eval_plot_path"])
         plot.close()
 
         # Save the timestamp
-        with open(LAST_TRAINING_TIMESTAMP_PATH, "w") as f:
+        with open(paths["last_training_timestamp_path"], "w") as f:
             f.write(timezone.now().isoformat())
 
         print("Model training completed successfully.")
@@ -123,3 +116,4 @@ def train_on_all_datasets_task():
         lock = TrainingLock.objects.get(pk=1)
         lock.is_locked = False
         lock.save()
+
