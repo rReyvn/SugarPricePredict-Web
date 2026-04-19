@@ -84,10 +84,22 @@ def dashboard_view(request):
 
     if request.method == "POST" and "excel_file" in request.FILES:
         file = request.FILES["excel_file"]
-        # The price_type is now in the POST data from the hidden input
         price_type_from_form = request.POST.get("price_type", "local")
-        UploadedFile.objects.create(file=file, price_type=price_type_from_form)
-        return redirect(f"/dashboard/?price_type={price_type_from_form}")
+        
+        # Default redirect parameters
+        redirect_status = "success"
+        redirect_message = "Dataset uploaded successfully!"
+
+        try:
+            UploadedFile.objects.create(file=file, price_type=price_type_from_form)
+        except Exception as e:
+            print(f"Error uploading file: {e}")
+            redirect_status = "error"
+            redirect_message = f"Failed to upload dataset: {e}"
+
+        return redirect(
+            f"/dashboard/?price_type={price_type_from_form}&status={redirect_status}&message={redirect_message}"
+        )
 
     price_type = request.GET.get("price_type") or "local"
     if price_type not in ["local", "premium"]:
@@ -135,6 +147,15 @@ def download_file(request, file_id):
 
 
 def delete_file(request, file_id):
-    uploaded_file = get_object_or_404(UploadedFile, pk=file_id)
-    uploaded_file.delete()
-    return redirect("dashboard")
+    price_type = request.POST.get("price_type", "local")
+    try:
+        uploaded_file = get_object_or_404(UploadedFile, pk=file_id)
+        file_name = uploaded_file.name
+        uploaded_file.delete()
+        message = f"Dataset '{file_name}' deleted successfully."
+        status = "success"
+    except Exception as e:
+        message = f"Error deleting file: {e}"
+        status = "error"
+    
+    return redirect(f"/dashboard/?price_type={price_type}&status={status}&message={message}")

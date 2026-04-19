@@ -1,3 +1,34 @@
+function showNotification(message, status = 'success') {
+    const container = document.body;
+
+    const notification = document.createElement('div');
+    const bgColor = status === 'success' ? 'bg-indigo-600' : 'bg-red-500'; // Changed success to indigo
+    
+    // Base classes for the notification
+    notification.className = `fixed top-5 right-5 p-4 rounded-lg text-white shadow-lg z-50 transform transition-all duration-300 ease-in-out`;
+
+    // Start off-screen
+    notification.classList.add('translate-x-full');
+    
+    // Add color
+    notification.classList.add(bgColor);
+    
+    notification.textContent = message;
+    container.appendChild(notification);
+
+    // Animate in
+    setTimeout(() => {
+        notification.classList.remove('translate-x-full');
+    }, 100);
+
+    // Set timeout to animate out and then remove
+    setTimeout(() => {
+        notification.classList.add('translate-x-full');
+        // Wait for animation to finish before removing the element
+        notification.addEventListener('transitionend', () => notification.remove());
+    }, 5000);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // Function to show a modal
     const showModal = (modal) => {

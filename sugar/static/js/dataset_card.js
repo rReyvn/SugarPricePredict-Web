@@ -1,34 +1,3 @@
-function showNotification(message, status = 'success') {
-    const container = document.body;
-
-    const notification = document.createElement('div');
-    const bgColor = status === 'success' ? 'bg-green-500' : 'bg-red-500';
-    
-    // Base classes for the notification
-    notification.className = `fixed top-5 right-5 p-4 rounded-lg text-white shadow-lg z-50 transform transition-all duration-300 ease-in-out`;
-
-    // Start off-screen
-    notification.classList.add('translate-x-full');
-    
-    // Add color
-    notification.classList.add(bgColor);
-    
-    notification.textContent = message;
-    container.appendChild(notification);
-
-    // Animate in
-    setTimeout(() => {
-        notification.classList.remove('translate-x-full');
-    }, 100);
-
-    // Set timeout to animate out and then remove
-    setTimeout(() => {
-        notification.classList.add('translate-x-full');
-        // Wait for animation to finish before removing the element
-        notification.addEventListener('transitionend', () => notification.remove());
-    }, 5000);
-}
-
 document.addEventListener('DOMContentLoaded', function () {
     // --- Training Logic ---
     const trainButton = document.getElementById('train-all-btn');
@@ -66,14 +35,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     return response.json();
                 })
                 .then(data => {
-                    showNotification('Model training has started. The page will reload shortly to reflect changes.');
+                    window.showNotification('Model training has started. The page will reload shortly to reflect changes.');
                     setTimeout(() => {
                         location.reload();
                     }, 5000);
                 })
                 .catch(error => {
                     console.error('Error starting training:', error.message);
-                    showNotification('Failed to start training: ' + error.message, 'error');
+                    window.showNotification('Failed to start training: ' + error.message, 'error');
                     trainButton.disabled = false;
                     trainButton.innerHTML = originalContent;
                 });
@@ -99,10 +68,16 @@ document.addEventListener('DOMContentLoaded', function () {
         confirmDeleteBtn.addEventListener('click', function () {
             if (fileIdToDelete) {
                 const csrfToken = this.dataset.csrfToken;
+                const urlParams = new URLSearchParams(window.location.search);
+                const priceType = urlParams.get('price_type') || 'local';
+
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = `/delete/${fileIdToDelete}/`;
-                form.innerHTML = `<input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">`;
+                form.innerHTML = `
+                    <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+                    <input type="hidden" name="price_type" value="${priceType}">
+                `;
                 document.body.appendChild(form);
                 form.submit();
             }
@@ -111,6 +86,21 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
+
+    // --- Download Notification Logic ---
+    document.querySelectorAll('.download-file-btn').forEach(button => {
+        button.addEventListener('click', function (event) {
+            event.preventDefault();
+            const downloadUrl = this.href;
+            
+            if (window.showNotification) {
+                window.showNotification('Download started...');
+            }
+
+            // Proceed with the download
+            window.location.href = downloadUrl;
+        });
+    });
 
     // --- Custom File Input Logic for Upload Modal ---
     const excelFileUploadUI = document.getElementById('excel-file-upload'); // The visible but hidden file input for UI interaction
