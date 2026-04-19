@@ -47,6 +47,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return response.json();
             })
             .then(data => {
+                console.log(data); // For debugging
                 // Determine which metrics to display based on the selected province
                 let metrics;
                 if (data.selected_province && data.selected_province !== "All") {
@@ -262,11 +263,15 @@ document.addEventListener('DOMContentLoaded', function () {
             .catch(error => {
                 resultsContainer.innerHTML = `
                     <div class="p-6 bg-white rounded-2xl shadow-md text-center">
-                        <h2 class="text-xl font-semibold mb-2">No Results Yet</h2>
-                        <p class="text-gray-500">The model has not been trained yet. Click the "Retrain model" button to generate the first prediction.</p>
+                        <h2 class="text-xl font-semibold mb-2">No Results Found</h2>
+                        <p class="text-gray-500">The model may not have been trained for this price type yet. Please click the "Retrain model" button.</p>
                     </div>
                 `;
                 console.warn('Could not fetch results:', error.message);
+                // Also show a notification to make the error obvious
+                if (window.showNotification) {
+                    window.showNotification(error.message, 'error');
+                }
             });
     }
 

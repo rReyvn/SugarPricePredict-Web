@@ -23,11 +23,16 @@ document.addEventListener('DOMContentLoaded', function () {
             </div>
         `;
 
+        const urlParams = new URLSearchParams(window.location.search);
+        const priceType = urlParams.get('price_type') || 'local';
+
         let url = predictionResultsUrl;
         const params = new URLSearchParams();
         if (currentProvince) {
             params.append('province', currentProvince);
         }
+        params.append('price_type', priceType);
+        
         if (params.toString()) {
             url += `?${params.toString()}`;
         }
@@ -100,6 +105,27 @@ document.addEventListener('DOMContentLoaded', function () {
                 const tableContainer = document.getElementById('table-container');
                 let tableHasBeenLoaded = false;
 
+                // --- Start of new logic to update metrics ---
+                const rmseValueElement = document.getElementById('rmse-value');
+                const mapeValueElement = document.getElementById('mape-value');
+
+                if (rmseValueElement && mapeValueElement) {
+                    let metrics;
+                    if (data.selected_province && data.selected_province !== "All") {
+                        metrics = data.evaluation_metrics.by_province[data.selected_province];
+                    } else {
+                        metrics = data.evaluation_metrics.overall;
+                    }
+
+                    const rmse = metrics ? metrics.RMSE.toFixed(2) : 'N/A';
+                    const mape = metrics ? metrics.MAPE.toFixed(2) : 'N/A';
+
+                    rmseValueElement.textContent = rmse;
+                    mapeValueElement.textContent = `${mape}%`;
+                }
+                // --- End of new logic ---
+
+                // --- Start of existing logic to update plot and latest prediction ---
                 const combinedPlotDiv = document.getElementById('combined-plot-div');
                 if (data.combined_plot_data && combinedPlotDiv) {
                     Plotly.newPlot(combinedPlotDiv, data.combined_plot_data.data, data.combined_plot_data.layout, {
@@ -109,7 +135,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     // Extract and display latest prediction info
                     const latestPredictionDateElement = document.getElementById('latest-prediction-date');
                     const latestPredictionPriceElement = document.getElementById('latest-prediction-price');
-                    const latestPredictionProvinceElement = document.getElementById('latest-prediction-province'); // New
+                    const latestPredictionProvinceElement = document.getElementById('latest-prediction-province');
+                    // ... (rest of the plot logic is unchanged)
 
                     if (latestPredictionDateElement && latestPredictionPriceElement && latestPredictionProvinceElement && data.combined_plot_data.data.length > 0) { // New: check latestPredictionProvinceElement
                         // Set province info
@@ -246,11 +273,16 @@ document.addEventListener('DOMContentLoaded', function () {
     function fetchAndRenderTable() {
         const tableContentArea = document.getElementById('table-content-area');
         tableContentArea.innerHTML = `<div class="flex flex-col items-center justify-center p-4 h-full"><svg class="animate-spin h-6 w-6 text-indigo-600 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><p class="text-center text-gray-700">Loading table data...</p></div>`;
+        const urlParams = new URLSearchParams(window.location.search);
+        const priceType = urlParams.get('price_type') || 'local';
+
         let url = predictionTableUrl;
         const params = new URLSearchParams();
         if (currentProvince) {
             params.append('province', currentProvince);
         }
+        params.append('price_type', priceType);
+
         if (params.toString()) {
             url += `?${params.toString()}`;
         }

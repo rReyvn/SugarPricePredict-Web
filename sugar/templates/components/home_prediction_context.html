@@ -50,9 +50,9 @@
                         <p class="font-semibold">Average Error in Rupiah</p>
                         <p class="text-gray-600">
                             {% if rmse %}
-                                <span class="font-medium text-gray-900">{{ rmse|floatformat:"2" }}</span>
+                                <span id="rmse-value" class="font-medium text-gray-900">{{ rmse|floatformat:"2" }}</span>
                             {% else %}
-                                N/A
+                                <span id="rmse-value">N/A</span>
                             {% endif %}
                         </p>
                     </div>
@@ -63,9 +63,9 @@
                         <p class="font-semibold">Average Error in Percentage</p>
                         <p class="text-gray-600">
                             {% if mape %}
-                                <span class="font-medium text-gray-900">{{ mape|floatformat:"2" }}%</span>
+                                <span id="mape-value" class="font-medium text-gray-900">{{ mape|floatformat:"2" }}%</span>
                             {% else %}
-                                N/A
+                                <span id="mape-value">N/A</span>
                             {% endif %}
                         </p>
                     </div>

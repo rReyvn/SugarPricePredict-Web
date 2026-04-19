@@ -44,8 +44,10 @@ def home(request):
     if os.path.exists(paths["evaluation_metrics_path"]):
         try:
             evaluation_metrics = joblib.load(paths["evaluation_metrics_path"])
-            rmse = evaluation_metrics.get("RMSE")
-            mape = evaluation_metrics.get("MAPE")
+            # Access the nested 'overall' dictionary
+            overall_metrics = evaluation_metrics.get("overall", {})
+            rmse = overall_metrics.get("RMSE")
+            mape = overall_metrics.get("MAPE")
         except Exception:
             pass
 

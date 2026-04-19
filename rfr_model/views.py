@@ -199,6 +199,7 @@ def prediction_results_view(request):
                 "selected_province": selected_province,
                 "prediction_start_date": prediction_start_date.strftime("%Y-%m-%d"),
                 "price_type": price_type,
+                "debug_metrics_path": paths["evaluation_metrics_path"], # For debugging
             }
         )
     except Exception as e:
