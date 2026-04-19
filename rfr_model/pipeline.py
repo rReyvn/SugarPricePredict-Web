@@ -235,15 +235,33 @@ def train_model(df_mining: pd.DataFrame):
     model = RandomForestRegressor(**RFR_PARAMS)
     model.fit(X_train[FEATURE_COLS], y_train)
 
-    # Predict
+    # Predict on the test set
     y_pred = model.predict(X_test[FEATURE_COLS])
 
-    # Evaluation Metrics
-    rmse = root_mean_squared_error(y_test, y_pred)
-    mape = mean_absolute_percentage_error(y_test, y_pred) * 100
+    # Overall Evaluation Metrics
+    overall_rmse = root_mean_squared_error(y_test, y_pred)
+    overall_mape = mean_absolute_percentage_error(y_test, y_pred) * 100
+
+    # Per-province Evaluation Metrics
+    df_eval = pd.DataFrame({
+        "Date": X_test["Date"],
+        "Province": X_test["Province"],
+        "Actual": y_test,
+        "Predicted": y_pred,
+    })
+    
+    per_province_metrics = {}
+    for province in df_eval["Province"].unique():
+        province_df = df_eval[df_eval["Province"] == province]
+        rmse = root_mean_squared_error(province_df["Actual"], province_df["Predicted"])
+        mape = mean_absolute_percentage_error(province_df["Actual"], province_df["Predicted"]) * 100
+        per_province_metrics[province] = {"RMSE": rmse, "MAPE": mape}
 
     # Prepare results for presentation
-    evaluation = {"RMSE": rmse, "MAPE": mape}
+    evaluation_metrics = {
+        "overall": {"RMSE": overall_rmse, "MAPE": overall_mape},
+        "by_province": per_province_metrics,
+    }
 
     # Create scatter plot for visualization
     plt.figure(figsize=(5, 5))
@@ -258,22 +276,12 @@ def train_model(df_mining: pd.DataFrame):
     # The plot is returned to be handled by the view (e.g., save to buffer)
     plot = plt
 
-    # Create a DataFrame for line plot evaluation
-    df_eval = pd.DataFrame(
-        {
-            "Date": X_test["Date"],
-            "Province": X_test["Province"],
-            "Actual": y_test,
-            "Predicted": y_pred,
-        }
-    )
-
     # Generate line plot data
     line_plot_data = plot_actual_vs_prediction_line(
         df_eval, title="Actual vs. Predicted Trend"
     )
 
-    return model, evaluation, plot, df_eval, line_plot_data
+    return model, evaluation_metrics, plot, df_eval, line_plot_data
 
 
 def plot_actual_vs_prediction_line(df_eval, title="Actual vs. Predicted Trend"):

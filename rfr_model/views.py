@@ -170,9 +170,6 @@ def prediction_results_view(request):
             "<td>", '<td class="px-6 py-4 whitespace-nowrap text-left">'
         )
 
-        rmse_value = round(evaluation_metrics["RMSE"], 2)
-        mape_value = round(evaluation_metrics["MAPE"], 2)
-
         # Encode evaluation plot to base64
         with open(paths["eval_plot_path"], "rb") as image_file:
             encoded_string = base64.b64encode(image_file.read()).decode()
@@ -195,8 +192,7 @@ def prediction_results_view(request):
             {
                 "forecast_table": forecast_table_html,
                 "plot": plot_base64,
-                "rmse": rmse_value,
-                "mape": mape_value,
+                "evaluation_metrics": evaluation_metrics,
                 "combined_plot_data": plotly_combined_plot_data,
                 "eval_plot_line_data": eval_plot_line_data,
                 "provinces": all_provinces,

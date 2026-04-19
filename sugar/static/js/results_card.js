@@ -47,6 +47,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 return response.json();
             })
             .then(data => {
+                // Determine which metrics to display based on the selected province
+                let metrics;
+                if (data.selected_province && data.selected_province !== "All") {
+                    metrics = data.evaluation_metrics.by_province[data.selected_province];
+                } else {
+                    metrics = data.evaluation_metrics.overall;
+                }
+                const rmse = metrics ? metrics.RMSE.toFixed(2) : 'N/A';
+                const mape = metrics ? metrics.MAPE.toFixed(2) : 'N/A';
+
                 resultsContainer.innerHTML = `
                     <div class="p-6 bg-white rounded-2xl shadow-md">
                         <div class="flex flex-wrap justify-between items-center mb-4 gap-4">
@@ -98,11 +108,11 @@ document.addEventListener('DOMContentLoaded', function () {
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
                                             <p class="text-sm font-medium text-gray-500">RMSE</p>
-                                            <p class="mt-1 text-2xl font-semibold text-gray-900">${data.rmse.toFixed(2)}</p>
+                                            <p id="rmse-value" class="mt-1 text-2xl font-semibold text-gray-900">${rmse}</p>
                                         </div>
                                         <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
                                             <p class="text-sm font-medium text-gray-500">MAPE</p>
-                                            <p class="mt-1 text-2xl font-semibold text-gray-900">${data.mape.toFixed(2)}%</p>
+                                            <p id="mape-value" class="mt-1 text-2xl font-semibold text-gray-900">${mape}%</p>
                                         </div>
                                     </div>
                                     <div class="flex flex-col sm:flex-row gap-4">

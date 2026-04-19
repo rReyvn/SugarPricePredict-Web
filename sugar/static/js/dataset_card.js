@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     return response.json();
                 })
                 .then(data => {
-                    window.showNotification('Model training has started. The page will reload shortly to reflect changes.');
+                    window.showNotification('Model training has started. Reload the page later to see the changes.');
                     setTimeout(() => {
                         location.reload();
                     }, 5000);
@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', function () {
         button.addEventListener('click', function (event) {
             event.preventDefault();
             const downloadUrl = this.href;
-            
+
             if (window.showNotification) {
                 window.showNotification('Download started...');
             }
@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const priceType = urlParams.get('price_type') || 'local';
                 hiddenPriceTypeInput.value = priceType;
             }
-            
+
             hiddenUploadForm.submit();
         }
     });
