@@ -1,4 +1,5 @@
 import os
+import re
 import pandas as pd
 import joblib
 from django.conf import settings
@@ -35,11 +36,44 @@ def train_on_all_datasets_task(price_type: str):
             print(f"No datasets found in {upload_dir} to train on.")
             return
 
+        # Identify active provinces from the latest dataset
+        file_with_years = []
+        for f in all_files:
+            match = re.search(r"(\d{4})", os.path.basename(f))
+            if match:
+                file_with_years.append((int(match.group(1)), f))
+
+        active_provinces = None
+        if file_with_years:
+            file_with_years.sort(key=lambda x: x[0], reverse=True)
+            latest_file_path = file_with_years[0][1]
+            print(f"Latest dataset identified: {os.path.basename(latest_file_path)}")
+            latest_raw_df = load_and_prepare_df(latest_file_path)
+            active_provinces = latest_raw_df["Province"].unique()
+            print(
+                f"Found {len(active_provinces)} active provinces in the latest dataset."
+            )
+        else:
+            print(
+                "Warning: Could not determine latest dataset from filenames. "
+                "Proceeding without filtering provinces."
+            )
+
         list_of_cleaned_dfs = []
         print(f"Found {len(all_files)} datasets. Cleaning...")
         for file_path in all_files:
             try:
                 raw_df = load_and_prepare_df(file_path)
+
+                # Filter dataframe to only include active provinces
+                if active_provinces is not None:
+                    raw_df = raw_df[raw_df["Province"].isin(active_provinces)]
+                    if raw_df.empty:
+                        print(
+                            f"--> Skipping file {os.path.basename(file_path)} as it contains no active provinces."
+                        )
+                        continue
+
                 cleaned_df = clean_data(raw_df)
                 list_of_cleaned_dfs.append(cleaned_df)
             except Exception as e:
