@@ -52,21 +52,33 @@ document.addEventListener('DOMContentLoaded', function () {
                         <div class="flex flex-wrap justify-between items-center mb-4 gap-4">
                             <h2 class="text-xl font-semibold">Prediction Results</h2>
                             <div class="flex items-center gap-4">
-                                <div class="w-48">
-                                    <div class="relative">
-                                        <label for="custom-province-select-button" class="block text-sm font-medium text-gray-700 sr-only">Province</label>
-                                        <button id="custom-province-select-button" type="button" class="relative w-full cursor-default rounded-full bg-white py-2 pl-3 pr-12 flex items-center justify-center shadow-sm border border-gray-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm">
-                                            <span id="selected-province-text" class="block truncate">All Provinces</span>
-                                            <span class="pointer-events-none absolute inset-y-0 right-0 ml-3 flex items-center pr-4">
-                                                <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                                    <path fill-rule="evenodd" d="M10 3a.75.75 0 01.55.24l3.25 3.5a.75.75 0 11-1.1 1.02L10 4.852 7.3 7.76a.75.75 0 01-1.1-1.02l3.25-3.5A.75.75 0 0110 3zm-3.75 9.75a.75.75 0 011.1 0L10 15.148l2.65-2.908a.75.75 0 011.1 1.02l-3.25 3.5a.75.75 0 01-1.1 0l-3.25-3.5a.75.75 0 010-1.02z" clip-rule="evenodd" />
-                                                </svg>
-                                            </span>
-                                        </button>
-                                        <div id="custom-province-options" class="absolute z-10 mt-2 w-full bg-white shadow-xl max-h-60 rounded-lg border border-gray-300 py-2 px-2 text-base overflow-auto focus:outline-none sm:text-sm hidden">
-                                            <!-- Options will be injected here by JavaScript -->
+                                <div class="flex items-center gap-2">
+                                    <button id="prev-province-btn" class="p-2 rounded-full bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                                        <svg class="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                                        </svg>
+                                    </button>
+                                    <div class="w-48">
+                                        <div class="relative">
+                                            <label for="custom-province-select-button" class="block text-sm font-medium text-gray-700 sr-only">Province</label>
+                                            <button id="custom-province-select-button" type="button" class="relative w-full cursor-default rounded-full bg-white py-2 pl-3 pr-12 flex items-center justify-center shadow-sm border border-gray-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm">
+                                                <span id="selected-province-text" class="block truncate">All Provinces</span>
+                                                <span class="pointer-events-none absolute inset-y-0 right-0 ml-3 flex items-center pr-4">
+                                                    <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                        <path fill-rule="evenodd" d="M10 3a.75.75 0 01.55.24l3.25 3.5a.75.75 0 11-1.1 1.02L10 4.852 7.3 7.76a.75.75 0 01-1.1-1.02l3.25-3.5A.75.75 0 0110 3zm-3.75 9.75a.75.75 0 011.1 0L10 15.148l2.65-2.908a.75.75 0 011.1 1.02l-3.25 3.5a.75.75 0 01-1.1 0l-3.25-3.5a.75.75 0 010-1.02z" clip-rule="evenodd" />
+                                                    </svg>
+                                                </span>
+                                            </button>
+                                            <div id="custom-province-options" class="absolute z-10 mt-2 w-full bg-white shadow-xl max-h-60 rounded-lg border border-gray-300 py-2 px-2 text-base overflow-auto focus:outline-none sm:text-sm hidden">
+                                                <!-- Options will be injected here by JavaScript -->
+                                            </div>
                                         </div>
                                     </div>
+                                    <button id="next-province-btn" class="p-2 rounded-full bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                                        <svg class="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -103,7 +115,27 @@ document.addEventListener('DOMContentLoaded', function () {
                 const tableTabBtn = document.getElementById('table-tab-btn');
                 const plotContainer = document.getElementById('plot-container');
                 const tableContainer = document.getElementById('table-container');
+                const prevProvinceBtn = document.getElementById('prev-province-btn');
+                const nextProvinceBtn = document.getElementById('next-province-btn');
                 let tableHasBeenLoaded = false;
+
+                // Handle province navigation
+                prevProvinceBtn.disabled = !data.prev_province;
+                nextProvinceBtn.disabled = !data.next_province;
+
+                prevProvinceBtn.onclick = () => {
+                    if (data.prev_province) {
+                        currentProvince = data.prev_province;
+                        fetchAndRenderResults();
+                    }
+                };
+
+                nextProvinceBtn.onclick = () => {
+                    if (data.next_province) {
+                        currentProvince = data.next_province;
+                        fetchAndRenderResults();
+                    }
+                };
 
                 // --- Start of new logic to update metrics ---
                 const rmseValueElement = document.getElementById('rmse-value');
@@ -178,47 +210,27 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 // Clear previous options
                 customProvinceOptions.innerHTML = '';
-
+                
                 // Populate custom dropdown with options
-                const addOption = (value, text) => {
+                data.provinces.forEach(province => {
                     const optionDiv = document.createElement('div');
-                    optionDiv.dataset.value = value;
-                    optionDiv.textContent = text;
+                    optionDiv.dataset.value = province;
+                    optionDiv.textContent = province === "All" ? "All Provinces" : province;
                     optionDiv.classList.add('text-gray-900', 'relative', 'cursor-default', 'select-none', 'py-2', 'px-4', 'rounded-full', 'hover:bg-indigo-600', 'hover:text-white');
                     customProvinceOptions.appendChild(optionDiv);
 
                     // Add click listener for selection
                     optionDiv.addEventListener('click', () => {
-                        selectedProvinceText.textContent = (value === "All" ? "All Provinces" : text); // Ensure "All Provinces" is displayed
-                        currentProvince = value;
+                        selectedProvinceText.textContent = (province === "All" ? "All Provinces" : province); // Ensure "All Provinces" is displayed
+                        currentProvince = province;
                         customProvinceOptions.classList.add('hidden'); // Hide options after selection
                         fetchAndRenderResults();
                         tableHasBeenLoaded = false;
                     });
-                };
+                });
 
-                addOption("All", "All Provinces"); // Always add "All Provinces" option
-
-                if (data.provinces) {
-                    data.provinces.forEach(province => {
-                        addOption(province, province);
-                    });
-                }
-
-                // Set initial selected value based on data or currentProvince
-                let selectedValueForDisplay = "All Provinces";
-                let selectedValueForBackend = "All";
-
-                if (data.selected_province && data.selected_province !== "") {
-                    selectedValueForBackend = data.selected_province;
-                    selectedValueForDisplay = data.selected_province === "All" ? "All Provinces" : data.selected_province;
-                } else if (currentProvince && currentProvince !== "") {
-                    selectedValueForBackend = currentProvince;
-                    selectedValueForDisplay = currentProvince === "All" ? "All Provinces" : currentProvince;
-                }
-
-                selectedProvinceText.textContent = selectedValueForDisplay;
-                currentProvince = selectedValueForBackend; // Update currentProvince for subsequent fetches
+                // Set initial selected value text
+                selectedProvinceText.textContent = data.selected_province === "All" ? "All Provinces" : data.selected_province;
 
                 // Toggle dropdown visibility
                 customProvinceSelectButton.addEventListener('click', (event) => {

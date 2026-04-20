@@ -123,13 +123,23 @@ def prediction_results_view(request):
         prediction_start_date = df_transformed["Date"].max() + pd.Timedelta(days=1)
 
         # Get list of all provinces for the dropdown
-        all_provinces = sorted(df_transformed["Province"].unique().tolist())
+        all_provinces_list = ["All"] + sorted(df_transformed["Province"].unique().tolist())
 
         # Validate selected_province
-        if selected_province not in all_provinces and selected_province != "All":
+        if selected_province not in all_provinces_list:
             return JsonResponse(
                 {"error": f"Province '{selected_province}' not found."}, status=400
             )
+
+        # Determine previous and next provinces for navigation
+        current_index = all_provinces_list.index(selected_province)
+        prev_province = all_provinces_list[current_index - 1] if current_index > 0 else None
+        next_province = (
+            all_provinces_list[current_index + 1]
+            if current_index < len(all_provinces_list) - 1
+            else None
+        )
+
 
         # Get data from cache
         province_data = cached_predictions[selected_province]
@@ -195,8 +205,10 @@ def prediction_results_view(request):
                 "evaluation_metrics": evaluation_metrics,
                 "combined_plot_data": plotly_combined_plot_data,
                 "eval_plot_line_data": eval_plot_line_data,
-                "provinces": all_provinces,
+                "provinces": all_provinces_list,
                 "selected_province": selected_province,
+                "prev_province": prev_province,
+                "next_province": next_province,
                 "prediction_start_date": prediction_start_date.strftime("%Y-%m-%d"),
                 "price_type": price_type,
                 "debug_metrics_path": paths["evaluation_metrics_path"], # For debugging
