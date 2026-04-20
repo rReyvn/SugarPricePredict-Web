@@ -2,19 +2,33 @@ function showNotification(message, status = 'success') {
     const container = document.body;
 
     const notification = document.createElement('div');
-    const bgColor = status === 'success' ? 'bg-indigo-600' : 'bg-red-500'; // Changed success to indigo
-    
+    const bgColor = status === 'success' ? 'bg-indigo-600' : 'bg-red-500';
+
     // Base classes for the notification
-    notification.className = `fixed top-5 right-5 p-4 rounded-lg text-white shadow-lg z-50 transform transition-all duration-300 ease-in-out`;
+    notification.className = `fixed top-5 right-5 p-4 rounded-lg text-white shadow-lg z-50 transform transition-all duration-300 ease-in-out flex items-center justify-between`;
 
     // Start off-screen
     notification.classList.add('translate-x-full');
-    
+
     // Add color
     notification.classList.add(bgColor);
-    
-    notification.textContent = message;
+
+    const messageSpan = document.createElement('span');
+    messageSpan.textContent = message;
+    notification.appendChild(messageSpan);
+
+    const closeButton = document.createElement('button');
+    closeButton.innerHTML = '&times;'; // '×' character
+    closeButton.className = 'ml-4 text-white text-lg font-bold leading-none hover:text-gray-200 focus:outline-none';
+    notification.appendChild(closeButton);
+
     container.appendChild(notification);
+
+    // Function to close the notification
+    const closeNotification = () => {
+        notification.classList.add('translate-x-full');
+        notification.addEventListener('transitionend', () => notification.remove(), { once: true });
+    };
 
     // Animate in
     setTimeout(() => {
@@ -22,11 +36,13 @@ function showNotification(message, status = 'success') {
     }, 100);
 
     // Set timeout to animate out and then remove
-    setTimeout(() => {
-        notification.classList.add('translate-x-full');
-        // Wait for animation to finish before removing the element
-        notification.addEventListener('transitionend', () => notification.remove());
-    }, 5000);
+    const autoCloseTimeout = setTimeout(closeNotification, 5000);
+
+    // Add event listener to close button
+    closeButton.addEventListener('click', () => {
+        clearTimeout(autoCloseTimeout); // Clear auto-close timeout if manually closed
+        closeNotification();
+    });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
