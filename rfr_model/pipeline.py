@@ -150,22 +150,6 @@ def transform_data(df: pd.DataFrame) -> pd.DataFrame:
     and holiday features.
     """
 
-    # Helper functions for holiday features
-    def eid_delta_days(ts: pd.Timestamp) -> int:
-        g = Gregorian(ts.year, ts.month, ts.day)
-        h = g.to_hijri()
-        eid_h = Hijri(h.year, 10, 1)  # 1 Syawal
-        eid_g = eid_h.to_gregorian()
-        eid_date = pd.Timestamp(eid_g.year, eid_g.month, eid_g.day)
-        return (ts.normalize() - eid_date).days
-
-    def eid_flags(ts: pd.Timestamp):
-        d = eid_delta_days(ts)
-        before = 1 if -7 <= d <= -1 else 0
-        day = 1 if d == 0 else 0
-        after = 1 if 1 <= d <= 6 else 0
-        return pd.Series([before, day, after], index=["before_eid", "eid", "after_eid"])
-
     # Data type normalization
     df["Date"] = pd.to_datetime(df["Date"])
     df["Province"] = df["Province"].astype("string")
@@ -180,18 +164,15 @@ def transform_data(df: pd.DataFrame) -> pd.DataFrame:
     df["Province_id"] = df["Province"].map(province_mapping)
 
     # 2) Lag features
-    for lag in [1, 14]:
+    for lag in [1]:
         df[f"lag_{lag}"] = df.groupby("Province", group_keys=False)["Price"].shift(lag)
 
-    # 3) Moving holiday features
-    df[["before_eid", "eid", "after_eid"]] = df["Date"].apply(eid_flags)
-
-    # 4) Time based features
+    # 3) Time based features
     df["month"] = df["Date"].dt.month
     df["year"] = df["Date"].dt.year
 
     # Drop rows with no lag features
-    df_transform = df.dropna(subset=["lag_1", "lag_14"]).reset_index(drop=True)
+    df_transform = df.dropna(subset=["lag_1"]).reset_index(drop=True)
 
     return df_transform, province_mapping
 
@@ -214,10 +195,6 @@ def train_model(df_mining: pd.DataFrame):
     FEATURE_COLS = [
         "Province_id",
         "lag_1",
-        "lag_14",
-        "before_eid",
-        "eid",
-        "after_eid",
         "month",
         "year",
     ]
@@ -360,15 +337,6 @@ def forecast_future_data(
     Forecasts future sugar prices for a given horizon using a trained model.
     """
 
-    # Helper functions for holiday features
-    def eid_delta_days(ts: pd.Timestamp) -> int:
-        g = Gregorian(ts.year, ts.month, ts.day)
-        h = g.to_hijri()
-        eid_h = Hijri(h.year, 10, 1)
-        eid_g = eid_h.to_gregorian()
-        eid_date = pd.Timestamp(eid_g.year, eid_g.month, eid_g.day)
-        return (ts.normalize() - eid_date).days
-
     forecast_results = []
 
     # Filter provinces if selected_province is provided
@@ -382,10 +350,6 @@ def forecast_future_data(
     FEATURE_COLS = [
         "Province_id",
         "lag_1",
-        "lag_14",
-        "before_eid",
-        "eid",
-        "after_eid",
         "month",
         "year",
     ]
@@ -410,21 +374,11 @@ def forecast_future_data(
             year = next_date.year
 
             lag_1 = last_rows.iloc[-1]["Price"]
-            lag_14 = last_rows.iloc[-14]["Price"] if len(last_rows) >= 14 else lag_1
-
-            d = eid_delta_days(next_date)
-            before_eid = 1 if -7 <= d <= -1 else 0
-            eid_day = 1 if d == 0 else 0
-            after_eid = 1 if 1 <= d <= 6 else 0
 
             X_future = pd.DataFrame(
                 {
                     "Province_id": [prov_id],
                     "lag_1": [lag_1],
-                    "lag_14": [lag_14],
-                    "before_eid": [before_eid],
-                    "eid": [eid_day],
-                    "after_eid": [after_eid],
                     "month": [month],
                     "year": [year],
                 }

@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function () {
             params.append('province', currentProvince);
         }
         params.append('price_type', priceType);
-        
+
         if (params.toString()) {
             url += `?${params.toString()}`;
         }
@@ -262,8 +262,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 resultsContainer.innerHTML = `
                     <div class="p-6 bg-white rounded-2xl shadow-md text-center">
                         <h2 class="text-xl font-semibold mb-2">No Results Yet</h2>
-                        <p class="text-gray-500">The model has not been trained yet. Click the "Retrain model" button to generate the first prediction.</p>
-                        <p class="text-red-500 mt-2">Error: ${error.message}</p>
+                        <p class="text-gray-500">The model has not been trained yet</p>
                     </div>
                 `;
                 console.warn('Could not fetch results:', error.message);
