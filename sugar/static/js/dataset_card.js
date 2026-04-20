@@ -36,9 +36,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 })
                 .then(data => {
                     window.showNotification('Model training has started. Reload the page later to see the changes.');
-                    setTimeout(() => {
-                        location.reload();
-                    }, 5000);
+
                 })
                 .catch(error => {
                     console.error('Error starting training:', error.message);
