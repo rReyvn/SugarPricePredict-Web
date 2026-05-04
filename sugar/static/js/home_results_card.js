@@ -160,6 +160,17 @@ document.addEventListener('DOMContentLoaded', function () {
                 // --- Start of existing logic to update plot and latest prediction ---
                 const combinedPlotDiv = document.getElementById('combined-plot-div');
                 if (data.combined_plot_data && combinedPlotDiv) {
+                    // Ensure layout and yaxis exist before modifying
+                    if (!data.combined_plot_data.layout) {
+                        data.combined_plot_data.layout = {};
+                    }
+                    if (!data.combined_plot_data.layout.yaxis) {
+                        data.combined_plot_data.layout.yaxis = {};
+                    }
+                    // Apply tickformat and hoverformat for 0 decimal places
+                    data.combined_plot_data.layout.yaxis.tickformat = '.0f';
+                    data.combined_plot_data.layout.yaxis.hoverformat = '.0f';
+
                     Plotly.newPlot(combinedPlotDiv, data.combined_plot_data.data, data.combined_plot_data.layout, {
                         responsive: true
                     });

@@ -182,7 +182,7 @@ def train_model(df_mining: pd.DataFrame):
     Trains the Random Forest Regressor model and evaluates it.
     """
     RFR_PARAMS = dict(
-        n_estimators=60,
+        n_estimators=50,
         max_depth=None,
         min_samples_split=20,
         min_samples_leaf=5,
@@ -220,18 +220,25 @@ def train_model(df_mining: pd.DataFrame):
     overall_mape = mean_absolute_percentage_error(y_test, y_pred) * 100
 
     # Per-province Evaluation Metrics
-    df_eval = pd.DataFrame({
-        "Date": X_test["Date"],
-        "Province": X_test["Province"],
-        "Actual": y_test,
-        "Predicted": y_pred,
-    })
-    
+    df_eval = pd.DataFrame(
+        {
+            "Date": X_test["Date"],
+            "Province": X_test["Province"],
+            "Actual": y_test,
+            "Predicted": y_pred,
+        }
+    )
+
     per_province_metrics = {}
     for province in df_eval["Province"].unique():
         province_df = df_eval[df_eval["Province"] == province]
         rmse = root_mean_squared_error(province_df["Actual"], province_df["Predicted"])
-        mape = mean_absolute_percentage_error(province_df["Actual"], province_df["Predicted"]) * 100
+        mape = (
+            mean_absolute_percentage_error(
+                province_df["Actual"], province_df["Predicted"]
+            )
+            * 100
+        )
         per_province_metrics[province] = {"RMSE": rmse, "MAPE": mape}
 
     # Prepare results for presentation
