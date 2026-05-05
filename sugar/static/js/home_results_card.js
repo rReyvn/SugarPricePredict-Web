@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- Results Fetching and Rendering ---
     const resultsContainer = document.getElementById('results-container');
     let currentProvince = "All";
+    let plotTabBtn, tableTabBtn, plotContainer, tableContainer, tableHasBeenLoaded = false;
 
     if (!resultsContainer) {
         console.warn('Results container not found. Skipping results rendering.');
@@ -10,6 +11,31 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const predictionResultsUrl = resultsContainer.dataset.resultsUrl;
     const predictionTableUrl = resultsContainer.dataset.tableUrl;
+    let activeTab = 'plot'; // Initialize active tab
+
+    function switchTab(tabName) {
+        if (tabName === 'plot') {
+            tableContainer.classList.add('hidden');
+            plotContainer.classList.remove('hidden');
+            plotTabBtn.classList.add('text-indigo-600', 'border-indigo-500');
+            plotTabBtn.classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+            tableTabBtn.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+            tableTabBtn.classList.remove('text-indigo-600', 'border-indigo-500');
+            activeTab = 'plot';
+        } else if (tabName === 'table') {
+            plotContainer.classList.add('hidden');
+            tableContainer.classList.remove('hidden');
+            tableTabBtn.classList.add('text-indigo-600', 'border-indigo-500');
+            tableTabBtn.classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+            plotTabBtn.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+            plotTabBtn.classList.remove('text-indigo-600', 'border-indigo-500');
+            activeTab = 'table';
+            if (!tableHasBeenLoaded) {
+                fetchAndRenderTable();
+                tableHasBeenLoaded = true;
+            }
+        }
+    }
 
     function fetchAndRenderResults() {
         resultsContainer.innerHTML = `
@@ -114,13 +140,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 const customProvinceSelectButton = document.getElementById('custom-province-select-button');
                 const selectedProvinceText = document.getElementById('selected-province-text');
                 const customProvinceOptions = document.getElementById('custom-province-options');
-                const plotTabBtn = document.getElementById('plot-tab-btn');
-                const tableTabBtn = document.getElementById('table-tab-btn');
-                const plotContainer = document.getElementById('plot-container');
-                const tableContainer = document.getElementById('table-container');
+                plotTabBtn = document.getElementById('plot-tab-btn');
+                tableTabBtn = document.getElementById('table-tab-btn');
+                plotContainer = document.getElementById('plot-container');
+                tableContainer = document.getElementById('table-container');
                 const prevProvinceBtn = document.getElementById('prev-province-btn');
                 const nextProvinceBtn = document.getElementById('next-province-btn');
-                let tableHasBeenLoaded = false;
+                tableHasBeenLoaded = false;
 
                 // Handle province navigation
                 prevProvinceBtn.disabled = !data.prev_province;
@@ -262,26 +288,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
 
                 plotTabBtn.addEventListener('click', () => {
-                    tableContainer.classList.add('hidden');
-                    plotContainer.classList.remove('hidden');
-                    plotTabBtn.classList.add('text-indigo-600', 'border-indigo-500');
-                    plotTabBtn.classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
-                    tableTabBtn.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
-                    tableTabBtn.classList.remove('text-indigo-600', 'border-indigo-500');
+                    switchTab('plot');
                 });
 
                 tableTabBtn.addEventListener('click', () => {
-                    plotContainer.classList.add('hidden');
-                    tableContainer.classList.remove('hidden');
-                    tableTabBtn.classList.add('text-indigo-600', 'border-indigo-500');
-                    tableTabBtn.classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
-                    plotTabBtn.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
-                    plotTabBtn.classList.remove('text-indigo-600', 'border-indigo-500');
-                    if (!tableHasBeenLoaded) {
-                        fetchAndRenderTable();
-                        tableHasBeenLoaded = true;
-                    }
+                    switchTab('table');
                 });
+
+                // After rendering, ensure the correct tab is displayed
+                switchTab(activeTab);
 
             })
             .catch(error => {
