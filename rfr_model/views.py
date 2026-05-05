@@ -161,10 +161,21 @@ def prediction_results_view(request):
             df_for_table = df_for_table.rename(columns={"Prediction": "Price"})
 
         # Convert the price column to int to remove .0 decimals
-        if "Price" in df_for_table.columns:
-            df_for_table["Price"] = df_for_table["Price"].astype(int)
-        elif "Prediction" in df_for_table.columns:
-            df_for_table["Prediction"] = df_for_table["Prediction"].astype(int)
+        price_column_name = "Price" if "Price" in df_for_table.columns else "Prediction"
+        if price_column_name in df_for_table.columns:
+            df_for_table[price_column_name] = df_for_table[price_column_name].astype(int)
+
+        # Calculate status based on price change
+        price_diff = df_for_table[price_column_name].diff()
+        
+        up_arrow = '<svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>'
+        down_arrow = '<svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>'
+        stable_line = '<svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14"></path></svg>'
+
+        df_for_table['Status'] = price_diff.apply(lambda x: up_arrow if x > 0 else (down_arrow if x < 0 else stable_line))
+        # Handle the first row which has no diff
+        if not df_for_table.empty:
+            df_for_table.iloc[0, df_for_table.columns.get_loc('Status')] = stable_line
 
         df_for_table["Date"] = df_for_table["Date"].dt.strftime("%d-%m-%Y")
 
@@ -179,7 +190,7 @@ def prediction_results_view(request):
 
         # Prepare forecast table HTML
         forecast_table_html = df_for_table.to_html(
-            classes="min-w-full divide-y divide-gray-200", border=0, index=False
+            classes="min-w-full divide-y divide-gray-200", border=0, index=False, escape=False
         )
         forecast_table_html = forecast_table_html.replace(
             "<th>",
@@ -283,10 +294,21 @@ def prediction_table_view(request):
             df_for_table = df_for_table.rename(columns={"Prediction": "Price"})
 
         # Convert numeric columns to int
-        if "Price" in df_for_table.columns:
-            df_for_table["Price"] = df_for_table["Price"].astype(int)
-        if "Prediction" in df_for_table.columns:
-            df_for_table["Prediction"] = df_for_table["Prediction"].astype(int)
+        price_column_name = "Price" if "Price" in df_for_table.columns else "Prediction"
+        if price_column_name in df_for_table.columns:
+            df_for_table[price_column_name] = df_for_table[price_column_name].astype(int)
+        
+        # Calculate status based on price change
+        price_diff = df_for_table[price_column_name].diff()
+        
+        up_arrow = '<svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>'
+        down_arrow = '<svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>'
+        stable_line = '<svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14"></path></svg>'
+
+        df_for_table['Status'] = price_diff.apply(lambda x: up_arrow if x > 0 else (down_arrow if x < 0 else stable_line))
+        # Handle the first row which has no diff
+        if not df_for_table.empty:
+            df_for_table.iloc[0, df_for_table.columns.get_loc('Status')] = stable_line
 
         # Calculate highest and lowest predictions
         price_column = "Price" if "Price" in df_for_table.columns else "Prediction"
@@ -299,7 +321,7 @@ def prediction_table_view(request):
 
         # Prepare forecast table HTML
         forecast_table_html = df_for_table.to_html(
-            classes="min-w-full divide-y divide-gray-200", border=0, index=False
+            classes="min-w-full divide-y divide-gray-200", border=0, index=False, escape=False
         )
         forecast_table_html = forecast_table_html.replace(
             "<th>",
