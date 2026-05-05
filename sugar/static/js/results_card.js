@@ -109,6 +109,9 @@ document.addEventListener('DOMContentLoaded', function () {
                                         <div id="combined-plot-div" class="rounded-lg" style="height: 400px;"></div>
                                     </div>
                                     <div id="table-container" class="hidden py-4">
+                                        <div id="table-summary" class="mb-4">
+                                            <!-- Summary cards will be injected here -->
+                                        </div>
                                         <div id="table-content-area" class="rounded-lg overflow-y-auto max-h-96 border border-gray-200">
                                             <!-- Table content loads here -->
                                         </div>
@@ -335,6 +338,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 return response.json();
             })
             .then(data => {
+                const tableSummary = document.getElementById('table-summary');
+                if (tableSummary) {
+                    tableSummary.innerHTML = `
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                            <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
+                                <p class="text-sm font-medium text-gray-500">Highest Prediction</p>
+                                <p class="mt-1 text-2xl font-semibold text-gray-900">${data.highest_prediction !== null ? data.highest_prediction : 'N/A'}</p>
+                            </div>
+                            <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
+                                <p class="text-sm font-medium text-gray-500">Lowest Prediction</p>
+                                <p class="mt-1 text-2xl font-semibold text-gray-900">${data.lowest_prediction !== null ? data.lowest_prediction : 'N/A'}</p>
+                            </div>
+                        </div>
+                    `;
+                }
                 tableContentArea.innerHTML = data.forecast_table;
             })
             .catch(error => {

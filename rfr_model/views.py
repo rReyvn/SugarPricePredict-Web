@@ -168,6 +168,15 @@ def prediction_results_view(request):
 
         df_for_table["Date"] = df_for_table["Date"].dt.strftime("%d-%m-%Y")
 
+        # Calculate highest and lowest predictions
+        price_column = "Price" if "Price" in df_for_table.columns else "Prediction"
+        if not df_for_table.empty:
+            highest_prediction = int(df_for_table[price_column].max())
+            lowest_prediction = int(df_for_table[price_column].min())
+        else:
+            highest_prediction = None
+            lowest_prediction = None
+
         # Prepare forecast table HTML
         forecast_table_html = df_for_table.to_html(
             classes="min-w-full divide-y divide-gray-200", border=0, index=False
@@ -211,7 +220,9 @@ def prediction_results_view(request):
                 "next_province": next_province,
                 "prediction_start_date": prediction_start_date.strftime("%Y-%m-%d"),
                 "price_type": price_type,
-                "debug_metrics_path": paths["evaluation_metrics_path"], # For debugging
+                "highest_prediction": highest_prediction,
+                "lowest_prediction": lowest_prediction,
+                "debug_metrics_path": paths["evaluation_metrics_path"],  # For debugging
             }
         )
     except Exception as e:
@@ -277,6 +288,15 @@ def prediction_table_view(request):
         if "Prediction" in df_for_table.columns:
             df_for_table["Prediction"] = df_for_table["Prediction"].astype(int)
 
+        # Calculate highest and lowest predictions
+        price_column = "Price" if "Price" in df_for_table.columns else "Prediction"
+        if not df_for_table.empty:
+            highest_prediction = int(df_for_table[price_column].max())
+            lowest_prediction = int(df_for_table[price_column].min())
+        else:
+            highest_prediction = None
+            lowest_prediction = None
+
         # Prepare forecast table HTML
         forecast_table_html = df_for_table.to_html(
             classes="min-w-full divide-y divide-gray-200", border=0, index=False
@@ -289,7 +309,13 @@ def prediction_table_view(request):
             "<td>", '<td class="px-6 py-4 whitespace-nowrap text-left">'
         )
 
-        return JsonResponse({"forecast_table": forecast_table_html})
+        return JsonResponse(
+            {
+                "forecast_table": forecast_table_html,
+                "highest_prediction": highest_prediction,
+                "lowest_prediction": lowest_prediction,
+            }
+        )
 
     except Exception as e:
         return JsonResponse(
