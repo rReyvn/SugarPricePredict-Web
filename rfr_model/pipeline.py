@@ -325,8 +325,12 @@ def plot_actual_vs_prediction_line(df_eval, title="Actual vs. Predicted Trend"):
 
     layout = {
         "title": title,
-        "xaxis": {"title": "Date"},
-        "yaxis": {"title": "Price"},
+        "xaxis": {
+            "title": {"text": "Date", "font": {"color": "black"}, "standoff": 10}
+        },
+        "yaxis": {
+            "title": {"text": "Price", "font": {"color": "black"}, "standoff": 10}
+        },
         "hovermode": "x unified",
         "legend": {"traceorder": "normal"},
     }
@@ -495,8 +499,20 @@ def plot_combined_forecast(
 
     layout = {
         "title": title,
-        "xaxis": {"title": "Date"},
-        "yaxis": {"title": "Price"},
+        "xaxis": {
+            "title": {
+                "text": "Date",
+                "font": {"color": "black"},
+                "standoff": 10,
+            }
+        },
+        "yaxis": {
+            "title": {
+                "text": "Price",
+                "font": {"color": "black"},
+                "standoff": 10,
+            }
+        },
         "hovermode": "x unified",
     }
 
