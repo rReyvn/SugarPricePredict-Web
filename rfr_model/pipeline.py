@@ -255,6 +255,7 @@ def train_model(df_mining: pd.DataFrame):
     plt.plot([min_val, max_val], [min_val, max_val], "r--", linewidth=2)
     plt.xlabel("Actual")
     plt.ylabel("Prediction")
+    plt.title("Actual vs Predicted (Scatter)")
     plt.tight_layout()
 
     # The plot is returned to be handled by the view (e.g., save to buffer)
@@ -262,15 +263,17 @@ def train_model(df_mining: pd.DataFrame):
 
     # Generate line plot data
     line_plot_data = plot_actual_vs_prediction_line(
-        df_eval, title="Actual vs. Predicted Trend"
+        df_eval, title="Comparison Between Actual and Predicted Prices"
     )
 
     return model, evaluation_metrics, plot, df_eval, line_plot_data
 
 
-def plot_actual_vs_prediction_line(df_eval, title="Actual vs. Predicted Trend"):
+def plot_actual_vs_prediction_line(
+    df_eval, title="Comparison Between Actual and Predicted Prices"
+):
     """
-    Prepares actual vs. predicted data for client-side plotting with Plotly.
+    Prepares comparison between actual and predicted prices for client-side plotting with Plotly.
     """
     traces = []
 
@@ -324,15 +327,18 @@ def plot_actual_vs_prediction_line(df_eval, title="Actual vs. Predicted Trend"):
     )
 
     layout = {
-        "title": title,
-        "xaxis": {
-            "title": {"text": "Date", "font": {"color": "black"}, "standoff": 10}
+        "title": {
+            "text": title,
+            "y": 0.95,
+            "x": 0.5,
+            "xanchor": "center",
+            "yanchor": "top",
         },
-        "yaxis": {
-            "title": {"text": "Price", "font": {"color": "black"}, "standoff": 10}
-        },
+        "xaxis": {"title": {"text": "Date", "standoff": 10}},
+        "yaxis": {"title": {"text": "Price", "standoff": 10}},
         "hovermode": "x unified",
         "legend": {"traceorder": "normal"},
+        "margin": {"t": 50},
     }
 
     return {"data": traces, "layout": layout}
@@ -498,22 +504,27 @@ def plot_combined_forecast(
         )
 
     layout = {
-        "title": title,
+        "title": {
+            "text": title,
+            "y": 0.95,
+            "x": 0.5,
+            "xanchor": "center",
+            "yanchor": "top",
+        },
         "xaxis": {
             "title": {
                 "text": "Date",
-                "font": {"color": "black"},
                 "standoff": 10,
             }
         },
         "yaxis": {
             "title": {
                 "text": "Price",
-                "font": {"color": "black"},
                 "standoff": 10,
             }
         },
         "hovermode": "x unified",
+        "margin": {"t": 50},
     }
 
     return {"data": traces, "layout": layout}
