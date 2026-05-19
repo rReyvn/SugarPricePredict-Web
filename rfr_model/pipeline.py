@@ -177,7 +177,7 @@ def transform_data(df: pd.DataFrame) -> pd.DataFrame:
     return df_transform, province_mapping
 
 
-def train_model(df_mining: pd.DataFrame):
+def train_model(df_mining: pd.DataFrame, sugar_type: str):
     """
     Trains the Random Forest Regressor model and evaluates it.
     """
@@ -255,7 +255,7 @@ def train_model(df_mining: pd.DataFrame):
     plt.plot([min_val, max_val], [min_val, max_val], "r--", linewidth=2)
     plt.xlabel("Actual")
     plt.ylabel("Prediction")
-    plt.title("Actual vs Predicted (Scatter)")
+    plt.title(f"Actual vs Predicted (Scatter) - {sugar_type.capitalize()}")
     plt.tight_layout()
 
     # The plot is returned to be handled by the view (e.g., save to buffer)
@@ -263,14 +263,16 @@ def train_model(df_mining: pd.DataFrame):
 
     # Generate line plot data
     line_plot_data = plot_actual_vs_prediction_line(
-        df_eval, title="Comparison Between Actual and Predicted Prices"
+        df_eval,
+        sugar_type,
+        title=f"Comparison Between Actual and Predicted Prices",
     )
 
     return model, evaluation_metrics, plot, df_eval, line_plot_data
 
 
 def plot_actual_vs_prediction_line(
-    df_eval, title="Comparison Between Actual and Predicted Prices"
+    df_eval, sugar_type: str, title="Comparison Between Actual and Predicted Prices"
 ):
     """
     Prepares comparison between actual and predicted prices for client-side plotting with Plotly.
@@ -328,7 +330,7 @@ def plot_actual_vs_prediction_line(
 
     layout = {
         "title": {
-            "text": title,
+            "text": f"{title} - {sugar_type.capitalize()}",
             "y": 0.95,
             "x": 0.5,
             "xanchor": "center",

@@ -68,7 +68,9 @@ def start_training_view(request):
             )
 
         return JsonResponse(
-            {"message": f"Model training for '{price_type}' started in the background."},
+            {
+                "message": f"Model training for '{price_type}' started in the background."
+            },
             status=202,
         )
     except json.JSONDecodeError:
@@ -79,7 +81,6 @@ def start_training_view(request):
         )
 
 
-
 def prediction_results_view(request):
     """
     Loads the pre-computed forecast and evaluation data for a given
@@ -87,15 +88,15 @@ def prediction_results_view(request):
     a selected province.
     """
     selected_province = request.GET.get("province") or "All"
-    price_type = request.GET.get("price_type") or "local"
+    sugar_type = request.GET.get("price_type") or "local"
 
-    if price_type not in ["local", "premium"]:
+    if sugar_type not in ["local", "premium"]:
         return JsonResponse(
             {"error": "Invalid 'price_type'. Must be 'local' or 'premium'."}, status=400
         )
 
     try:
-        paths = get_model_paths(price_type)
+        paths = get_model_paths(sugar_type)
         required_files = [
             paths["eval_plot_path"],
             paths["evaluation_metrics_path"],
@@ -108,7 +109,7 @@ def prediction_results_view(request):
             if not os.path.exists(f):
                 return JsonResponse(
                     {
-                        "error": f"Artifact {os.path.basename(f)} not found for '{price_type}' model. Please train it first."
+                        "error": f"Artifact {os.path.basename(f)} not found for '{sugar_type}' model. Please train it first."
                     },
                     status=404,
                 )
@@ -123,7 +124,9 @@ def prediction_results_view(request):
         prediction_start_date = df_transformed["Date"].max() + pd.Timedelta(days=1)
 
         # Get list of all provinces for the dropdown
-        all_provinces_list = ["All"] + sorted(df_transformed["Province"].unique().tolist())
+        all_provinces_list = ["All"] + sorted(
+            df_transformed["Province"].unique().tolist()
+        )
 
         # Validate selected_province
         if selected_province not in all_provinces_list:
@@ -133,13 +136,14 @@ def prediction_results_view(request):
 
         # Determine previous and next provinces for navigation
         current_index = all_provinces_list.index(selected_province)
-        prev_province = all_provinces_list[current_index - 1] if current_index > 0 else None
+        prev_province = (
+            all_provinces_list[current_index - 1] if current_index > 0 else None
+        )
         next_province = (
             all_provinces_list[current_index + 1]
             if current_index < len(all_provinces_list) - 1
             else None
         )
-
 
         # Get data from cache
         province_data = cached_predictions[selected_province]
@@ -150,10 +154,10 @@ def prediction_results_view(request):
         df_for_table["Prediction"] = df_for_table["Prediction"].round(0)
 
         if selected_province == "All":
-            plot_title = f"Forecasted Sugar Prices (Mean, {price_type.capitalize()})"
+            plot_title = f"{sugar_type.capitalize()} Sugar Prices Forecast (Mean)"
         else:
             plot_title = (
-                f"Forecasted Sugar Prices ({selected_province}, {price_type.capitalize()})"
+                f"{sugar_type.capitalize()} Sugar Prices Forecast ({selected_province})"
             )
 
         # Format 'Date' column for table
@@ -163,19 +167,23 @@ def prediction_results_view(request):
         # Convert the price column to int to remove .0 decimals
         price_column_name = "Price" if "Price" in df_for_table.columns else "Prediction"
         if price_column_name in df_for_table.columns:
-            df_for_table[price_column_name] = df_for_table[price_column_name].astype(int)
+            df_for_table[price_column_name] = df_for_table[price_column_name].astype(
+                int
+            )
 
         # Calculate status based on price change
         price_diff = df_for_table[price_column_name].diff()
-        
+
         up_arrow = '<svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>'
         down_arrow = '<svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>'
         stable_line = '<svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14"></path></svg>'
 
-        df_for_table['Status'] = price_diff.apply(lambda x: up_arrow if x > 0 else (down_arrow if x < 0 else stable_line))
+        df_for_table["Status"] = price_diff.apply(
+            lambda x: up_arrow if x > 0 else (down_arrow if x < 0 else stable_line)
+        )
         # Handle the first row which has no diff
         if not df_for_table.empty:
-            df_for_table.iloc[0, df_for_table.columns.get_loc('Status')] = stable_line
+            df_for_table.iloc[0, df_for_table.columns.get_loc("Status")] = stable_line
 
         df_for_table["Date"] = df_for_table["Date"].dt.strftime("%d-%m-%Y")
 
@@ -190,7 +198,10 @@ def prediction_results_view(request):
 
         # Prepare forecast table HTML
         forecast_table_html = df_for_table.to_html(
-            classes="min-w-full divide-y divide-gray-200", border=0, index=False, escape=False
+            classes="min-w-full divide-y divide-gray-200",
+            border=0,
+            index=False,
+            escape=False,
         )
         forecast_table_html = forecast_table_html.replace(
             "<th>",
@@ -230,7 +241,7 @@ def prediction_results_view(request):
                 "prev_province": prev_province,
                 "next_province": next_province,
                 "prediction_start_date": prediction_start_date.strftime("%Y-%m-%d"),
-                "price_type": price_type,
+                "price_type": sugar_type,
                 "highest_prediction": highest_prediction,
                 "lowest_prediction": lowest_prediction,
                 "debug_metrics_path": paths["evaluation_metrics_path"],  # For debugging
@@ -240,6 +251,7 @@ def prediction_results_view(request):
         return JsonResponse(
             {"error": f"Failed to generate results: {str(e)}"}, status=500
         )
+
 
 def prediction_table_view(request):
     """
@@ -296,19 +308,23 @@ def prediction_table_view(request):
         # Convert numeric columns to int
         price_column_name = "Price" if "Price" in df_for_table.columns else "Prediction"
         if price_column_name in df_for_table.columns:
-            df_for_table[price_column_name] = df_for_table[price_column_name].astype(int)
-        
+            df_for_table[price_column_name] = df_for_table[price_column_name].astype(
+                int
+            )
+
         # Calculate status based on price change
         price_diff = df_for_table[price_column_name].diff()
-        
+
         up_arrow = '<svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>'
         down_arrow = '<svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>'
         stable_line = '<svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14"></path></svg>'
 
-        df_for_table['Status'] = price_diff.apply(lambda x: up_arrow if x > 0 else (down_arrow if x < 0 else stable_line))
+        df_for_table["Status"] = price_diff.apply(
+            lambda x: up_arrow if x > 0 else (down_arrow if x < 0 else stable_line)
+        )
         # Handle the first row which has no diff
         if not df_for_table.empty:
-            df_for_table.iloc[0, df_for_table.columns.get_loc('Status')] = stable_line
+            df_for_table.iloc[0, df_for_table.columns.get_loc("Status")] = stable_line
 
         # Calculate highest and lowest predictions
         price_column = "Price" if "Price" in df_for_table.columns else "Prediction"
@@ -321,7 +337,10 @@ def prediction_table_view(request):
 
         # Prepare forecast table HTML
         forecast_table_html = df_for_table.to_html(
-            classes="min-w-full divide-y divide-gray-200", border=0, index=False, escape=False
+            classes="min-w-full divide-y divide-gray-200",
+            border=0,
+            index=False,
+            escape=False,
         )
         forecast_table_html = forecast_table_html.replace(
             "<th>",

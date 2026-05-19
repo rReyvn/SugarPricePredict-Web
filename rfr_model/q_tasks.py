@@ -16,15 +16,17 @@ from .pipeline import (
 )
 
 
-def train_on_all_datasets_task(price_type: str):
+def train_on_all_datasets_task(sugar_type: str):
     """
     A Django Q task that finds all datasets for a given price type,
     cleans, merges, trains a model, and saves the artifacts.
     """
     try:
-        print(f"Starting model training for price type: {price_type}...")
-        paths = get_model_paths(price_type)
-        upload_dir = os.path.join(settings.BASE_DIR, "rfr_model", "datasets", price_type)
+        print(f"Starting model training for price type: {sugar_type}...")
+        paths = get_model_paths(sugar_type)
+        upload_dir = os.path.join(
+            settings.BASE_DIR, "rfr_model", "datasets", sugar_type
+        )
 
         all_files = [
             os.path.join(upload_dir, f)
@@ -96,7 +98,9 @@ def train_on_all_datasets_task(price_type: str):
 
         # Train Model
         print("Training the model...")
-        model, evaluation, plot, df_eval, line_plot_data = train_model(df_transformed)
+        model, evaluation, plot, df_eval, line_plot_data = train_model(
+            df_transformed, sugar_type
+        )
 
         # Generate and save forecast results
         print("Generating forecast...")
@@ -150,4 +154,3 @@ def train_on_all_datasets_task(price_type: str):
         lock = TrainingLock.objects.get(pk=1)
         lock.is_locked = False
         lock.save()
-
