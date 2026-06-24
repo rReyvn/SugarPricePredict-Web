@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- Results Fetching and Rendering ---
     const resultsContainer = document.getElementById('results-container');
     let currentProvince = "All";
-    let plotTabBtn, tableTabBtn, plotContainer, tableContainer, tableHasBeenLoaded = false;
+    let plotTabBtn, tableTabBtn, evalTabBtn, plotContainer, tableContainer, evalContainer, tableHasBeenLoaded = false;
 
     if (!resultsContainer) {
         console.warn('Results container not found. Skipping results rendering.');
@@ -16,23 +16,50 @@ document.addEventListener('DOMContentLoaded', function () {
     function switchTab(tabName) {
         if (tabName === 'plot') {
             tableContainer.classList.add('hidden');
+            if (evalContainer) evalContainer.classList.add('hidden');
             plotContainer.classList.remove('hidden');
             plotTabBtn.classList.add('text-indigo-600', 'border-indigo-500');
             plotTabBtn.classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
             tableTabBtn.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
             tableTabBtn.classList.remove('text-indigo-600', 'border-indigo-500');
+            if (evalTabBtn) {
+                evalTabBtn.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                evalTabBtn.classList.remove('text-indigo-600', 'border-indigo-500');
+            }
             activeTab = 'plot';
         } else if (tabName === 'table') {
             plotContainer.classList.add('hidden');
+            if (evalContainer) evalContainer.classList.add('hidden');
             tableContainer.classList.remove('hidden');
             tableTabBtn.classList.add('text-indigo-600', 'border-indigo-500');
             tableTabBtn.classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
             plotTabBtn.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
             plotTabBtn.classList.remove('text-indigo-600', 'border-indigo-500');
+            if (evalTabBtn) {
+                evalTabBtn.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                evalTabBtn.classList.remove('text-indigo-600', 'border-indigo-500');
+            }
             activeTab = 'table';
             if (!tableHasBeenLoaded) {
                 fetchAndRenderTable();
                 tableHasBeenLoaded = true;
+            }
+        } else if (tabName === 'eval') {
+            plotContainer.classList.add('hidden');
+            tableContainer.classList.add('hidden');
+            if (evalContainer) evalContainer.classList.remove('hidden');
+            if (evalTabBtn) {
+                evalTabBtn.classList.add('text-indigo-600', 'border-indigo-500');
+                evalTabBtn.classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+            }
+            plotTabBtn.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+            plotTabBtn.classList.remove('text-indigo-600', 'border-indigo-500');
+            tableTabBtn.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+            tableTabBtn.classList.remove('text-indigo-600', 'border-indigo-500');
+            activeTab = 'eval';
+            const evalPlotLineDiv = document.getElementById('eval-plot-line-div');
+            if (evalPlotLineDiv && evalPlotLineDiv.data) {
+                 Plotly.Plots.resize(evalPlotLineDiv);
             }
         }
     }
@@ -133,6 +160,9 @@ document.addEventListener('DOMContentLoaded', function () {
                                             <button id="table-tab-btn" class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
                                                 Table
                                             </button>
+                                            <button id="eval-tab-btn" class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                                                Evaluation
+                                            </button>
                                         </nav>
                                     </div>
                                     <div id="plot-container" class="py-4">
@@ -146,34 +176,33 @@ document.addEventListener('DOMContentLoaded', function () {
                                             <!-- Table content loads here -->
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                            <div class="p-4">
-                                <h3 class="text-lg font-semibold mb-4">Model Evaluation</h3>
-                                <div class="mb-4 bg-gray-50 rounded-lg p-3 border border-gray-200 text-center">
-                                    <p class="text-sm font-medium text-gray-700">Data Split Ratio <br>(Train:Test:Validation)<br><span class="font-semibold text-indigo-600">${splitString}</span></p>
-                                </div>
-                                <div class="grid grid-cols-1 gap-4">
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                                        <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
-                                            <p class="text-sm font-medium text-gray-500">Test RMSE</p>
-                                            <p id="rmse-value" class="mt-1 text-2xl font-semibold text-gray-900">${rmse}</p>
+                                    <div id="eval-container" class="hidden py-4">
+                                        <div class="mb-4 bg-gray-50 rounded-lg p-3 border border-gray-200 text-center">
+                                            <p class="text-sm font-medium text-gray-700">Data Split Ratio <br>(Train:Test:Validation)<br><span class="font-semibold text-indigo-600">${splitString}</span></p>
                                         </div>
-                                        <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
-                                            <p class="text-sm font-medium text-gray-500">Test MAPE</p>
-                                            <p id="mape-value" class="mt-1 text-2xl font-semibold text-gray-900">${mape}%</p>
+                                        <div class="grid grid-cols-1 gap-4">
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                                                <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
+                                                    <p class="text-sm font-medium text-gray-500">Test RMSE</p>
+                                                    <p id="rmse-value" class="mt-1 text-2xl font-semibold text-gray-900">${rmse}</p>
+                                                </div>
+                                                <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
+                                                    <p class="text-sm font-medium text-gray-500">Test MAPE</p>
+                                                    <p id="mape-value" class="mt-1 text-2xl font-semibold text-gray-900">${mape}%</p>
+                                                </div>
+                                                <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
+                                                    <p class="text-sm font-medium text-gray-500">Validation RMSE</p>
+                                                    <p id="val-rmse-value" class="mt-1 text-2xl font-semibold text-gray-900">${val_rmse}</p>
+                                                </div>
+                                                <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
+                                                    <p class="text-sm font-medium text-gray-500">Validation MAPE</p>
+                                                    <p id="val-mape-value" class="mt-1 text-2xl font-semibold text-gray-900">${val_mape}%</p>
+                                                </div>
+                                            </div>
+                                            <div class="flex flex-col gap-4">
+                                                <div id="eval-plot-line-div" class="w-full rounded-lg" style="height: 400px;"></div>
+                                            </div>
                                         </div>
-                                        <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
-                                            <p class="text-sm font-medium text-gray-500">Validation RMSE</p>
-                                            <p id="val-rmse-value" class="mt-1 text-2xl font-semibold text-gray-900">${val_rmse}</p>
-                                        </div>
-                                        <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
-                                            <p class="text-sm font-medium text-gray-500">Validation MAPE</p>
-                                            <p id="val-mape-value" class="mt-1 text-2xl font-semibold text-gray-900">${val_mape}%</p>
-                                        </div>
-                                    </div>
-                                    <div class="flex flex-col gap-4">
-                                        <div id="eval-plot-line-div" class="w-full rounded-lg" style="height: 400px;"></div>
                                     </div>
                                 </div>
                             </div>
@@ -186,8 +215,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 const customProvinceOptions = document.getElementById('custom-province-options');
                 plotTabBtn = document.getElementById('plot-tab-btn');
                 tableTabBtn = document.getElementById('table-tab-btn');
+                evalTabBtn = document.getElementById('eval-tab-btn');
                 plotContainer = document.getElementById('plot-container');
                 tableContainer = document.getElementById('table-container');
+                evalContainer = document.getElementById('eval-container');
                 const prevProvinceBtn = document.getElementById('prev-province-btn');
                 const nextProvinceBtn = document.getElementById('next-province-btn');
                 tableHasBeenLoaded = false;
@@ -212,8 +243,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 function updateEvalPlotVisibility(province) {
                     const evalPlotLineDiv = document.getElementById('eval-plot-line-div');
-                    if (!evalPlotLineDiv || !evalPlotLineDiv.offsetParent) {
-                        // If the plot is not visible, do nothing
+                    if (!evalPlotLineDiv) {
                         return;
                     }
 
@@ -316,6 +346,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 tableTabBtn.addEventListener('click', () => {
                     switchTab('table');
+                });
+
+                evalTabBtn.addEventListener('click', () => {
+                    switchTab('eval');
                 });
 
                 // After rendering, ensure the correct tab is displayed
