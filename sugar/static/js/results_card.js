@@ -113,7 +113,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 const val_rmse = (metrics && metrics.Val_RMSE !== undefined) ? metrics.Val_RMSE.toFixed(2) : 'N/A';
                 const val_mape = (metrics && metrics.Val_MAPE !== undefined) ? metrics.Val_MAPE.toFixed(2) : 'N/A';
                 const splitRatio = data.evaluation_metrics.split_ratio;
-                const splitString = splitRatio ? `${(splitRatio.train * 100).toFixed(0)}:${(splitRatio.val * 100).toFixed(0)}:${(splitRatio.test * 100).toFixed(0)}` : 'N/A';
+                const trainPct = splitRatio ? (splitRatio.train * 100).toFixed(0) : 0;
+                const valPct = splitRatio ? (splitRatio.val * 100).toFixed(0) : 0;
+                const testPct = splitRatio ? (splitRatio.test * 100).toFixed(0) : 0;
 
                 resultsContainer.innerHTML = `
                     <div class="p-4 bg-white rounded-2xl shadow-md">
@@ -177,8 +179,18 @@ document.addEventListener('DOMContentLoaded', function () {
                                         </div>
                                     </div>
                                     <div id="eval-container" class="hidden py-4">
-                                        <div class="mb-4 bg-gray-50 rounded-lg p-3 border border-gray-200 text-center">
-                                            <p class="text-sm font-medium text-gray-700">Data Split Ratio <br>(Train:Test:Validation)<br><span class="font-semibold text-indigo-600">${splitString}</span></p>
+                                        <div class="mb-6 p-5 bg-white rounded-xl border border-gray-100 shadow-sm">
+                                            <p class="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wider">Data Split Ratio</p>
+                                            <div class="w-full flex h-3 rounded-full overflow-hidden bg-gray-100 mb-3 shadow-inner">
+                                                <div class="bg-indigo-500 hover:bg-indigo-600 transition-colors duration-300" style="width: ${trainPct}%" title="Train: ${trainPct}%"></div>
+                                                <div class="bg-sky-400 hover:bg-sky-500 transition-colors duration-300" style="width: ${valPct}%" title="Validation: ${valPct}%"></div>
+                                                <div class="bg-teal-400 hover:bg-teal-500 transition-colors duration-300" style="width: ${testPct}%" title="Test: ${testPct}%"></div>
+                                            </div>
+                                            <div class="flex justify-between text-xs text-gray-600 font-medium px-1">
+                                                <div class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-indigo-500 mr-2 shadow-sm"></span> Train (${trainPct}%)</div>
+                                                <div class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-sky-400 mr-2 shadow-sm"></span> Val (${valPct}%)</div>
+                                                <div class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-teal-400 mr-2 shadow-sm"></span> Test (${testPct}%)</div>
+                                            </div>
                                         </div>
                                         <div class="grid grid-cols-1 gap-4">
                                             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
@@ -402,14 +414,30 @@ document.addEventListener('DOMContentLoaded', function () {
                 const tableSummary = document.getElementById('table-summary');
                 if (tableSummary) {
                     tableSummary.innerHTML = `
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                            <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
-                                <p class="text-sm font-medium text-gray-500">Highest Prediction</p>
-                                <p class="mt-1 text-2xl font-semibold text-gray-900">${data.highest_prediction !== null ? data.highest_prediction : 'N/A'}</p>
-                            </div>
-                            <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
-                                <p class="text-sm font-medium text-gray-500">Lowest Prediction</p>
-                                <p class="mt-1 text-2xl font-semibold text-gray-900">${data.lowest_prediction !== null ? data.lowest_prediction : 'N/A'}</p>
+                        <div class="bg-white rounded-lg border border-gray-200 mb-4 shadow-sm overflow-hidden">
+                            <div class="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-gray-200">
+                                <div class="flex-1 p-3 flex items-center justify-center">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-emerald-50 text-emerald-500">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                                        </div>
+                                        <div class="text-left">
+                                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Highest Prediction</p>
+                                            <p class="text-lg font-bold text-gray-900 leading-tight">${data.highest_prediction !== null ? data.highest_prediction : 'N/A'}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex-1 p-3 flex items-center justify-center">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-rose-50 text-rose-500">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path></svg>
+                                        </div>
+                                        <div class="text-left">
+                                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Lowest Prediction</p>
+                                            <p class="text-lg font-bold text-gray-900 leading-tight">${data.lowest_prediction !== null ? data.lowest_prediction : 'N/A'}</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     `;
