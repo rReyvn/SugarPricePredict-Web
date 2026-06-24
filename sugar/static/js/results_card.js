@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', function () {
             activeTab = 'eval';
             const evalPlotLineDiv = document.getElementById('eval-plot-line-div');
             if (evalPlotLineDiv && evalPlotLineDiv.data) {
-                 Plotly.Plots.resize(evalPlotLineDiv);
+                Plotly.Plots.resize(evalPlotLineDiv);
             }
         }
     }
@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 resultsContainer.innerHTML = `
                     <div class="p-4 bg-white rounded-2xl shadow-md">
-                        <div class="flex flex-wrap justify-between items-center mb-4 gap-4">
+                        <div class="flex flex-wrap justify-between items-center mb-2 gap-4">
                             <h2 class="text-xl font-semibold">Prediction Results</h2>
                             <div class="flex items-center gap-4">
                                 <div class="flex items-center gap-2">

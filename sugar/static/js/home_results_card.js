@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(data => {
                 resultsContainer.innerHTML = `
                     <div class="p-4 bg-white rounded-2xl shadow-md">
-                        <div class="flex flex-wrap justify-between items-center mb-4 gap-4">
+                        <div class="flex flex-wrap justify-between items-center mb-2 gap-4">
                             <h2 class="text-xl font-semibold">Prediction Results</h2>
                             <div class="flex items-center gap-4">
                                 <div class="flex items-center gap-2">
@@ -250,7 +250,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 // Clear previous options
                 customProvinceOptions.innerHTML = '';
-                
+
                 // Populate custom dropdown with options
                 data.provinces.forEach(province => {
                     const optionDiv = document.createElement('div');
