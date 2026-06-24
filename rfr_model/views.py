@@ -211,11 +211,6 @@ def prediction_results_view(request):
             "<td>", '<td class="px-6 py-4 whitespace-nowrap text-left">'
         )
 
-        # Encode evaluation plot to base64
-        with open(paths["eval_plot_path"], "rb") as image_file:
-            encoded_string = base64.b64encode(image_file.read()).decode()
-        plot_base64 = f"data:image/png;base64,{encoded_string}"
-
         # Limit historical data for plotting
         if not df_predicted_for_plot.empty:
             prediction_start_date = df_predicted_for_plot["Date"].min()
@@ -232,7 +227,6 @@ def prediction_results_view(request):
         return JsonResponse(
             {
                 "forecast_table": forecast_table_html,
-                "plot": plot_base64,
                 "evaluation_metrics": evaluation_metrics,
                 "combined_plot_data": plotly_combined_plot_data,
                 "eval_plot_line_data": eval_plot_line_data,

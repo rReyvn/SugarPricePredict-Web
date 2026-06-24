@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', function () {
             params.append('province', currentProvince);
         }
         params.append('price_type', priceType);
-        
+
         if (params.toString()) {
             url += `?${params.toString()}`;
         }
@@ -83,6 +83,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 const rmse = metrics ? metrics.RMSE.toFixed(2) : 'N/A';
                 const mape = metrics ? metrics.MAPE.toFixed(2) : 'N/A';
+                const val_rmse = (metrics && metrics.Val_RMSE !== undefined) ? metrics.Val_RMSE.toFixed(2) : 'N/A';
+                const val_mape = (metrics && metrics.Val_MAPE !== undefined) ? metrics.Val_MAPE.toFixed(2) : 'N/A';
+                const splitRatio = data.evaluation_metrics.split_ratio;
+                const splitString = splitRatio ? `${(splitRatio.train * 100).toFixed(0)}:${(splitRatio.val * 100).toFixed(0)}:${(splitRatio.test * 100).toFixed(0)}` : 'N/A';
 
                 resultsContainer.innerHTML = `
                     <div class="p-6 bg-white rounded-2xl shadow-md">
@@ -146,22 +150,30 @@ document.addEventListener('DOMContentLoaded', function () {
                             </div>
                             <div class="p-4">
                                 <h3 class="text-lg font-semibold mb-4">Model Evaluation</h3>
+                                <div class="mb-4 bg-gray-50 rounded-lg p-3 border border-gray-200 text-center">
+                                    <p class="text-sm font-medium text-gray-700">Data Split Ratio <br>(Train:Test:Validation)<br><span class="font-semibold text-indigo-600">${splitString}</span></p>
+                                </div>
                                 <div class="grid grid-cols-1 gap-4">
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                                         <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
-                                            <p class="text-sm font-medium text-gray-500">RMSE</p>
+                                            <p class="text-sm font-medium text-gray-500">Test RMSE</p>
                                             <p id="rmse-value" class="mt-1 text-2xl font-semibold text-gray-900">${rmse}</p>
                                         </div>
                                         <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
-                                            <p class="text-sm font-medium text-gray-500">MAPE</p>
+                                            <p class="text-sm font-medium text-gray-500">Test MAPE</p>
                                             <p id="mape-value" class="mt-1 text-2xl font-semibold text-gray-900">${mape}%</p>
                                         </div>
-                                    </div>
-                                    <div class="flex flex-col sm:flex-row gap-4">
-                                        <div class="rounded-lg w-full sm:w-1/2 max-w-sm mx-auto">
-                                            <img src="${data.plot}" alt="Model Evaluation Plot" class="rounded-lg w-full" />
+                                        <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
+                                            <p class="text-sm font-medium text-gray-500">Validation RMSE</p>
+                                            <p id="val-rmse-value" class="mt-1 text-2xl font-semibold text-gray-900">${val_rmse}</p>
                                         </div>
-                                        <div id="eval-plot-line-div" class="w-full sm:w-1/2 rounded-lg" style="height: 400px;"></div>
+                                        <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
+                                            <p class="text-sm font-medium text-gray-500">Validation MAPE</p>
+                                            <p id="val-mape-value" class="mt-1 text-2xl font-semibold text-gray-900">${val_mape}%</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col gap-4">
+                                        <div id="eval-plot-line-div" class="w-full rounded-lg" style="height: 400px;"></div>
                                     </div>
                                 </div>
                             </div>
@@ -261,7 +273,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 // Clear previous options
                 customProvinceOptions.innerHTML = '';
-                
+
                 // Populate custom dropdown with options
                 data.provinces.forEach(province => {
                     const optionDiv = document.createElement('div');
@@ -328,7 +340,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function fetchAndRenderTable() {
         const tableContentArea = document.getElementById('table-content-area');
         tableContentArea.innerHTML = `<div class="flex flex-col items-center justify-center p-4 h-full"><svg class="animate-spin h-6 w-6 text-indigo-600 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><p class="text-center text-gray-700">Loading table data...</p></div>`;
-        
+
         const urlParams = new URLSearchParams(window.location.search);
         const priceType = urlParams.get('price_type') || 'local';
 

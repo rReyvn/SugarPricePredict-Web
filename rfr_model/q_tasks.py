@@ -98,7 +98,7 @@ def train_on_all_datasets_task(sugar_type: str):
 
         # Train Model
         print("Training the model...")
-        model, evaluation, plot, df_eval, line_plot_data = train_model(
+        model, evaluation, df_eval, line_plot_data = train_model(
             df_transformed, sugar_type
         )
 
@@ -137,8 +137,6 @@ def train_on_all_datasets_task(sugar_type: str):
         joblib.dump(df_transformed, paths["df_transformed_path"])
         joblib.dump(cached_predictions, paths["cached_predictions_path"])
         joblib.dump(line_plot_data, paths["eval_plot_line_path"])
-        plot.savefig(paths["eval_plot_path"])
-        plot.close()
 
         # Save the timestamp
         with open(paths["last_training_timestamp_path"], "w") as f:

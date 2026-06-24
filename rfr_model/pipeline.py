@@ -48,13 +48,13 @@ def load_and_prepare_df(file_path):
 
     # Check for "Province" or "Komoditas (Rp)"
     if "Province" in df.columns:
-        # Drop "Semua Provinsi"
-        df = df[df["Province"] != "Semua Provinsi"]
+        # Drop "Semua Provinsi" and "Maluku Utara"
+        df = df[~df["Province"].isin(["Semua Provinsi", "Maluku Utara"])]
         return df
     elif "Komoditas (Rp)" in df.columns:
         df = df.rename(columns={"Komoditas (Rp)": "Province"})
-        # Drop "Semua Provinsi" data
-        df = df[df["Province"] != "Semua Provinsi"]
+        # Drop "Semua Provinsi" and "Maluku Utara" data
+        df = df[~df["Province"].isin(["Semua Provinsi", "Maluku Utara"])]
         return df
     else:
         raise ValueError(
@@ -191,7 +191,9 @@ def train_model(df_mining: pd.DataFrame, sugar_type: str):
         random_state=42,
         n_jobs=1,
     )
-    train_size = 0.9
+    train_size = 0.8
+    val_size = 0.1
+    
     FEATURE_COLS = [
         "Province_id",
         "lag_1",
@@ -204,28 +206,47 @@ def train_model(df_mining: pd.DataFrame, sugar_type: str):
     X = df_mining.drop(columns=[TARGET_COL])
     y = df_mining[TARGET_COL]
 
-    # Time-based train-test split
-    split_index = int(len(df_mining) * train_size)
-    X_train, X_test = X.iloc[:split_index], X.iloc[split_index:]
-    y_train, y_test = y.iloc[:split_index], y.iloc[split_index:]
+    # Time-based train-val-test split
+    train_index = int(len(df_mining) * train_size)
+    val_index = int(len(df_mining) * (train_size + val_size))
+
+    X_train = X.iloc[:train_index]
+    y_train = y.iloc[:train_index]
+
+    X_val = X.iloc[train_index:val_index]
+    y_val = y.iloc[train_index:val_index]
+
+    X_test = X.iloc[val_index:]
+    y_test = y.iloc[val_index:]
 
     model = RandomForestRegressor(**RFR_PARAMS)
     model.fit(X_train[FEATURE_COLS], y_train)
 
-    # Predict on the test set
+    # Predict on the validation and test sets
+    y_val_pred = model.predict(X_val[FEATURE_COLS])
     y_pred = model.predict(X_test[FEATURE_COLS])
 
     # Overall Evaluation Metrics
     overall_rmse = root_mean_squared_error(y_test, y_pred)
     overall_mape = mean_absolute_percentage_error(y_test, y_pred) * 100
 
-    # Per-province Evaluation Metrics
+    overall_val_rmse = root_mean_squared_error(y_val, y_val_pred)
+    overall_val_mape = mean_absolute_percentage_error(y_val, y_val_pred) * 100
+
     df_eval = pd.DataFrame(
         {
             "Date": X_test["Date"],
             "Province": X_test["Province"],
             "Actual": y_test,
             "Predicted": y_pred,
+        }
+    )
+
+    df_val_eval = pd.DataFrame(
+        {
+            "Province": X_val["Province"],
+            "Actual": y_val,
+            "Predicted": y_val_pred,
         }
     )
 
@@ -239,36 +260,36 @@ def train_model(df_mining: pd.DataFrame, sugar_type: str):
             )
             * 100
         )
-        per_province_metrics[province] = {"RMSE": rmse, "MAPE": mape}
+        
+        province_val_df = df_val_eval[df_val_eval["Province"] == province]
+        if not province_val_df.empty:
+            val_rmse = root_mean_squared_error(province_val_df["Actual"], province_val_df["Predicted"])
+            val_mape = mean_absolute_percentage_error(province_val_df["Actual"], province_val_df["Predicted"]) * 100
+        else:
+            val_rmse = 0.0
+            val_mape = 0.0
+            
+        per_province_metrics[province] = {"RMSE": rmse, "MAPE": mape, "Val_RMSE": val_rmse, "Val_MAPE": val_mape}
 
     # Prepare results for presentation
     evaluation_metrics = {
-        "overall": {"RMSE": overall_rmse, "MAPE": overall_mape},
+        "overall": {
+            "RMSE": overall_rmse, "MAPE": overall_mape,
+            "Val_RMSE": overall_val_rmse, "Val_MAPE": overall_val_mape
+        },
         "by_province": per_province_metrics,
+        "split_ratio": {"train": train_size, "val": val_size, "test": 1.0 - train_size - val_size}
     }
 
-    # Create scatter plot for visualization
-    plt.figure(figsize=(5, 5))
-    plt.scatter(y_test, y_pred, alpha=0.6)
-    max_val = max(y_test.max(), y_pred.max())
-    min_val = min(y_test.min(), y_pred.min())
-    plt.plot([min_val, max_val], [min_val, max_val], "r--", linewidth=2)
-    plt.xlabel("Actual")
-    plt.ylabel("Prediction")
-    plt.title(f"Actual vs Predicted (Scatter) - {sugar_type.capitalize()}")
-    plt.tight_layout()
-
-    # The plot is returned to be handled by the view (e.g., save to buffer)
-    plot = plt
+    # The plot is no longer returned as we only want the line plot
 
     # Generate line plot data
     line_plot_data = plot_actual_vs_prediction_line(
         df_eval,
         sugar_type,
-        title=f"Comparison Between Actual and Predicted Prices",
     )
 
-    return model, evaluation_metrics, plot, df_eval, line_plot_data
+    return model, evaluation_metrics, df_eval, line_plot_data
 
 
 def plot_actual_vs_prediction_line(

@@ -110,7 +110,7 @@ def dashboard_view(request):
     paths = get_model_paths(price_type)
     uploaded_files_list = UploadedFile.objects.filter(price_type=price_type).order_by("-upload_date")
 
-    paginator = Paginator(uploaded_files_list, 5)
+    paginator = Paginator(uploaded_files_list, 3)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
