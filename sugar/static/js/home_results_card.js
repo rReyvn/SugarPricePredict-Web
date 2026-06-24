@@ -340,14 +340,30 @@ document.addEventListener('DOMContentLoaded', function () {
                 const tableSummary = document.getElementById('table-summary');
                 if (tableSummary) {
                     tableSummary.innerHTML = `
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                            <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
-                                <p class="text-sm font-medium text-gray-500">Highest Prediction</p>
-                                <p class="mt-1 text-2xl font-semibold text-gray-900">${data.highest_prediction !== null ? data.highest_prediction : 'N/A'}</p>
-                            </div>
-                            <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
-                                <p class="text-sm font-medium text-gray-500">Lowest Prediction</p>
-                                <p class="mt-1 text-2xl font-semibold text-gray-900">${data.lowest_prediction !== null ? data.lowest_prediction : 'N/A'}</p>
+                        <div class="bg-white rounded-lg border border-gray-200 mb-4 shadow-sm overflow-hidden">
+                            <div class="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-gray-200">
+                                <div class="flex-1 p-3 flex items-center justify-center">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-emerald-50 text-emerald-500">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                                        </div>
+                                        <div class="text-left">
+                                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Highest Prediction</p>
+                                            <p class="text-lg font-bold text-gray-900 leading-tight">${data.highest_prediction !== null ? data.highest_prediction : 'N/A'}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex-1 p-3 flex items-center justify-center">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-rose-50 text-rose-500">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path></svg>
+                                        </div>
+                                        <div class="text-left">
+                                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Lowest Prediction</p>
+                                            <p class="text-lg font-bold text-gray-900 leading-tight">${data.lowest_prediction !== null ? data.lowest_prediction : 'N/A'}</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     `;
