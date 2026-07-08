@@ -112,6 +112,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 const mape = metrics ? metrics.MAPE.toFixed(2) : 'N/A';
                 const val_rmse = (metrics && metrics.Val_RMSE !== undefined) ? metrics.Val_RMSE.toFixed(2) : 'N/A';
                 const val_mape = (metrics && metrics.Val_MAPE !== undefined) ? metrics.Val_MAPE.toFixed(2) : 'N/A';
+                const train_rmse = (metrics && metrics.Train_RMSE !== undefined) ? metrics.Train_RMSE.toFixed(2) : 'N/A';
+                const train_mape = (metrics && metrics.Train_MAPE !== undefined) ? metrics.Train_MAPE.toFixed(2) : 'N/A';
                 const splitRatio = data.evaluation_metrics.split_ratio;
                 const trainPct = splitRatio ? (splitRatio.train * 100).toFixed(0) : 0;
                 const valPct = splitRatio ? (splitRatio.val * 100).toFixed(0) : 0;
@@ -193,22 +195,30 @@ document.addEventListener('DOMContentLoaded', function () {
                                             </div>
                                         </div>
                                         <div class="grid grid-cols-1 gap-4">
-                                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                                            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
                                                 <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
-                                                    <p class="text-sm font-medium text-gray-500">Test RMSE</p>
-                                                    <p id="rmse-value" class="mt-1 text-2xl font-semibold text-gray-900">${rmse}</p>
+                                                    <p class="text-xs sm:text-sm font-medium text-gray-500">Train RMSE</p>
+                                                    <p id="train-rmse-value" class="mt-1 text-xl sm:text-2xl font-semibold text-gray-900">${train_rmse}</p>
                                                 </div>
                                                 <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
-                                                    <p class="text-sm font-medium text-gray-500">Test MAPE</p>
-                                                    <p id="mape-value" class="mt-1 text-2xl font-semibold text-gray-900">${mape}%</p>
+                                                    <p class="text-xs sm:text-sm font-medium text-gray-500">Train MAPE</p>
+                                                    <p id="train-mape-value" class="mt-1 text-xl sm:text-2xl font-semibold text-gray-900">${train_mape}%</p>
                                                 </div>
                                                 <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
-                                                    <p class="text-sm font-medium text-gray-500">Validation RMSE</p>
-                                                    <p id="val-rmse-value" class="mt-1 text-2xl font-semibold text-gray-900">${val_rmse}</p>
+                                                    <p class="text-xs sm:text-sm font-medium text-gray-500">Val RMSE</p>
+                                                    <p id="val-rmse-value" class="mt-1 text-xl sm:text-2xl font-semibold text-gray-900">${val_rmse}</p>
                                                 </div>
                                                 <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
-                                                    <p class="text-sm font-medium text-gray-500">Validation MAPE</p>
-                                                    <p id="val-mape-value" class="mt-1 text-2xl font-semibold text-gray-900">${val_mape}%</p>
+                                                    <p class="text-xs sm:text-sm font-medium text-gray-500">Val MAPE</p>
+                                                    <p id="val-mape-value" class="mt-1 text-xl sm:text-2xl font-semibold text-gray-900">${val_mape}%</p>
+                                                </div>
+                                                <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
+                                                    <p class="text-xs sm:text-sm font-medium text-gray-500">Test RMSE</p>
+                                                    <p id="rmse-value" class="mt-1 text-xl sm:text-2xl font-semibold text-gray-900">${rmse}</p>
+                                                </div>
+                                                <div class="p-4 bg-white rounded-lg border border-gray-200 text-center">
+                                                    <p class="text-xs sm:text-sm font-medium text-gray-500">Test MAPE</p>
+                                                    <p id="mape-value" class="mt-1 text-xl sm:text-2xl font-semibold text-gray-900">${mape}%</p>
                                                 </div>
                                             </div>
                                             <div class="flex flex-col gap-4">

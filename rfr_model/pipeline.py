@@ -181,16 +181,28 @@ def train_model(df_mining: pd.DataFrame, sugar_type: str):
     """
     Trains the Random Forest Regressor model and evaluates it.
     """
-    RFR_PARAMS = dict(
-        n_estimators=50,
-        max_depth=None,
-        min_samples_split=20,
-        min_samples_leaf=5,
-        max_features="sqrt",
-        bootstrap=True,
-        random_state=42,
-        n_jobs=1,
-    )
+    if sugar_type == "local":
+        RFR_PARAMS = dict(
+            n_estimators=75,
+            max_depth=10,
+            min_samples_split=10,
+            min_samples_leaf=5,
+            max_features="sqrt",
+            bootstrap=True,
+            random_state=42,
+            n_jobs=1,
+        )
+    elif sugar_type == "premium":
+        RFR_PARAMS = dict(
+            n_estimators=25,
+            max_depth=10,
+            min_samples_split=10,
+            min_samples_leaf=5,
+            max_features="log2",
+            bootstrap=True,
+            random_state=42,
+            n_jobs=1,
+        )
     train_size = 0.8
     val_size = 0.1
     
@@ -222,16 +234,41 @@ def train_model(df_mining: pd.DataFrame, sugar_type: str):
     model = RandomForestRegressor(**RFR_PARAMS)
     model.fit(X_train[FEATURE_COLS], y_train)
 
-    # Predict on the validation and test sets
-    y_val_pred = model.predict(X_val[FEATURE_COLS])
+    # Predict on the training set
+    y_train_pred = model.predict(X_train[FEATURE_COLS])
+    overall_train_rmse = root_mean_squared_error(y_train, y_train_pred)
+    overall_train_mape = mean_absolute_percentage_error(y_train, y_train_pred) * 100
+    df_train_eval = pd.DataFrame(
+        {
+            "Province": X_train["Province"],
+            "Actual": y_train,
+            "Predicted": y_train_pred,
+        }
+    )
+
+    # Predict on the test set
     y_pred = model.predict(X_test[FEATURE_COLS])
 
     # Overall Evaluation Metrics
     overall_rmse = root_mean_squared_error(y_test, y_pred)
     overall_mape = mean_absolute_percentage_error(y_test, y_pred) * 100
 
-    overall_val_rmse = root_mean_squared_error(y_val, y_val_pred)
-    overall_val_mape = mean_absolute_percentage_error(y_val, y_val_pred) * 100
+    # Validation metrics — only computed when val_size > 0
+    if val_size > 0.0 and not X_val.empty:
+        y_val_pred = model.predict(X_val[FEATURE_COLS])
+        overall_val_rmse = root_mean_squared_error(y_val, y_val_pred)
+        overall_val_mape = mean_absolute_percentage_error(y_val, y_val_pred) * 100
+        df_val_eval = pd.DataFrame(
+            {
+                "Province": X_val["Province"],
+                "Actual": y_val,
+                "Predicted": y_val_pred,
+            }
+        )
+    else:
+        overall_val_rmse = 0.0
+        overall_val_mape = 0.0
+        df_val_eval = pd.DataFrame(columns=["Province", "Actual", "Predicted"])
 
     df_eval = pd.DataFrame(
         {
@@ -239,14 +276,6 @@ def train_model(df_mining: pd.DataFrame, sugar_type: str):
             "Province": X_test["Province"],
             "Actual": y_test,
             "Predicted": y_pred,
-        }
-    )
-
-    df_val_eval = pd.DataFrame(
-        {
-            "Province": X_val["Province"],
-            "Actual": y_val,
-            "Predicted": y_val_pred,
         }
     )
 
@@ -268,14 +297,27 @@ def train_model(df_mining: pd.DataFrame, sugar_type: str):
         else:
             val_rmse = 0.0
             val_mape = 0.0
+
+        province_train_df = df_train_eval[df_train_eval["Province"] == province]
+        if not province_train_df.empty:
+            train_rmse = root_mean_squared_error(province_train_df["Actual"], province_train_df["Predicted"])
+            train_mape = mean_absolute_percentage_error(province_train_df["Actual"], province_train_df["Predicted"]) * 100
+        else:
+            train_rmse = 0.0
+            train_mape = 0.0
             
-        per_province_metrics[province] = {"RMSE": rmse, "MAPE": mape, "Val_RMSE": val_rmse, "Val_MAPE": val_mape}
+        per_province_metrics[province] = {
+            "RMSE": rmse, "MAPE": mape, 
+            "Val_RMSE": val_rmse, "Val_MAPE": val_mape,
+            "Train_RMSE": train_rmse, "Train_MAPE": train_mape
+        }
 
     # Prepare results for presentation
     evaluation_metrics = {
         "overall": {
             "RMSE": overall_rmse, "MAPE": overall_mape,
-            "Val_RMSE": overall_val_rmse, "Val_MAPE": overall_val_mape
+            "Val_RMSE": overall_val_rmse, "Val_MAPE": overall_val_mape,
+            "Train_RMSE": overall_train_rmse, "Train_MAPE": overall_train_mape
         },
         "by_province": per_province_metrics,
         "split_ratio": {"train": train_size, "val": val_size, "test": 1.0 - train_size - val_size}
